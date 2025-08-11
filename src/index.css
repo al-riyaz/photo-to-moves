@@ -39,20 +39,31 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Brand & motion tokens */
+    --brand: 262 83% 58%;
+    --brand-2: 198 94% 60%;
+    --brand-3: 291 73% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-2)));
+    --gradient-subtle: radial-gradient(600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), hsl(var(--brand) / 0.15), transparent 40%);
+    --shadow-elegant: 0 12px 30px -10px hsl(var(--brand) / 0.35);
+    --shadow-glow: 0 0 40px hsl(var(--brand-2) / 0.35);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Cube face colors */
+    --cube-white: 0 0% 98%;
+    --cube-yellow: 51 100% 50%;
+    --cube-red: 0 82% 55%;
+    --cube-orange: 24 95% 55%;
+    --cube-blue: 220 85% 55%;
+    --cube-green: 140 65% 45%;
   }
 
   .dark {
@@ -91,6 +102,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Brand tokens (dark) */
+    --gradient-subtle: radial-gradient(600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), hsl(var(--brand) / 0.25), transparent 40%);
   }
 }
 
@@ -102,4 +116,27 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+  .bg-hero {
+    background-image: var(--gradient-subtle);
+  }
+  .tilt-on-hover {
+    transition: var(--transition-smooth);
+    will-change: transform;
+  }
+  .tilt-on-hover:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
+    box-shadow: var(--shadow-elegant);
+  }
+}
+
+@layer utilities {
+  .cube-U { background-color: hsl(var(--cube-white)); }
+  .cube-R { background-color: hsl(var(--cube-red)); }
+  .cube-F { background-color: hsl(var(--cube-green)); }
+  .cube-D { background-color: hsl(var(--cube-yellow)); }
+  .cube-L { background-color: hsl(var(--cube-orange)); }
+  .cube-B { background-color: hsl(var(--cube-blue)); }
 }
