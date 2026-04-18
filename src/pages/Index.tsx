@@ -247,7 +247,7 @@ const Index: React.FC = () => {
               <CardDescription>Validation requires 9 of each color (U, R, F, D, L, B).</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="hero" className="w-full" onClick={buildAndSolve} disabled={!allLabelsPresent}>Solve</Button>
+              <Button variant="hero" className="w-full" onClick={buildAndSolve}>Solve</Button>
               <Button variant="outline" className="w-full" onClick={() => { setSolution(null); setStepIdx(0); }}>Clear Solution</Button>
               <Button variant="ghost" className="w-full" onClick={() => {
                 setFaces({ U: { rgb: [], labels: [...emptyLabels], rotation: 0 }, R: { rgb: [], labels: [...emptyLabels], rotation: 0 }, F: { rgb: [], labels: [...emptyLabels], rotation: 0 }, D: { rgb: [], labels: [...emptyLabels], rotation: 0 }, L: { rgb: [], labels: [...emptyLabels], rotation: 0 }, B: { rgb: [], labels: [...emptyLabels], rotation: 0 } });
