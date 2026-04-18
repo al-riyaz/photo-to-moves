@@ -1,9 +1,9 @@
 import type { Face } from './color-utils';
 
-export type FaceGrid = Record<Face, string[]>; // each string is one of 'U','R','F','D','L','B'
+export type FaceGrid = Record<Face, string[]>;
 
 export function buildFaceletsString(grids: FaceGrid): string {
-  // Order expected by Kociemba: U, R, F, D, L, B — each in row-major 0..8
+  // cubejs order: U, R, F, D, L, B — each in row-major 0..8
   const order: Face[] = ['U', 'R', 'F', 'D', 'L', 'B'];
   return order.map((f) => grids[f].join('')).join('');
 }
@@ -22,20 +22,25 @@ export function validateFaceletCounts(facelets: string): { ok: boolean; message?
   return { ok: true };
 }
 
+let solverInitialized = false;
+let cubeLib: any = null;
+
+async function getCube() {
+  if (!cubeLib) {
+    const mod: any = await import('cubejs');
+    cubeLib = mod.default ?? mod;
+  }
+  return cubeLib;
+}
+
 export async function solveFacelets(facelets: string): Promise<string> {
-  // Attempt to support different min2phase builds
-  const mod: any = await import('min2phase');
-  if (typeof mod.solve === 'function') {
-    return mod.solve(facelets);
+  const Cube = await getCube();
+  if (!solverInitialized) {
+    Cube.initSolver();
+    solverInitialized = true;
   }
-  if (typeof mod.default === 'function') {
-    return mod.default(facelets);
-  }
-  if (mod.Search) {
-    // Java-style API
-    const search = new mod.Search();
-    const result = search.solution(facelets, 21, 100000000, 0, 0);
-    return result as string;
-  }
-  throw new Error('No suitable solver function found in min2phase');
+  const cube = Cube.fromString(facelets);
+  const solution: string = cube.solve();
+  if (!solution || !solution.trim()) return 'Already solved';
+  return solution;
 }
