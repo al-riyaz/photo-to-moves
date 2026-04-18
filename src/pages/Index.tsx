@@ -81,14 +81,23 @@ const Index: React.FC = () => {
 
   const buildAndSolve = async () => {
     try {
-      if (!allLabelsPresent) {
-        toast({ title: 'Incomplete faces', description: 'Please set all 54 stickers before solving.' });
-        return;
+      let grids: Record<Face, Face[]>;
+      if (allLabelsPresent) {
+        grids = FACE_ORDER.reduce((acc, f) => {
+          acc[f] = faces[f].labels as Face[];
+          return acc;
+        }, {} as Record<Face, Face[]>);
+      } else {
+        // Fall back to reading the 54 stickers from the 3D cube
+        await cube3dRef.current?.waitUntilIdle();
+        const read = cube3dRef.current?.readFacelets();
+        if (!read) {
+          toast({ title: 'Incomplete faces', description: 'Upload images, enter colors, or scramble the 3D cube first.' });
+          return;
+        }
+        grids = read as Record<Face, Face[]>;
+        toast({ title: 'Reading from 3D cube', description: 'Using current 3D cube state as input.' });
       }
-      const grids = FACE_ORDER.reduce((acc, f) => {
-        acc[f] = faces[f].labels as Face[];
-        return acc;
-      }, {} as Record<Face, Face[]>);
       const facelets = buildFaceletsString(grids as any);
       const v = validateFaceletCounts(facelets);
       if (!v.ok) {
@@ -238,7 +247,7 @@ const Index: React.FC = () => {
               <CardDescription>Validation requires 9 of each color (U, R, F, D, L, B).</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="hero" className="w-full" onClick={buildAndSolve} disabled={!allLabelsPresent}>Solve</Button>
+              <Button variant="hero" className="w-full" onClick={buildAndSolve}>Solve</Button>
               <Button variant="outline" className="w-full" onClick={() => { setSolution(null); setStepIdx(0); }}>Clear Solution</Button>
               <Button variant="ghost" className="w-full" onClick={() => {
                 setFaces({ U: { rgb: [], labels: [...emptyLabels], rotation: 0 }, R: { rgb: [], labels: [...emptyLabels], rotation: 0 }, F: { rgb: [], labels: [...emptyLabels], rotation: 0 }, D: { rgb: [], labels: [...emptyLabels], rotation: 0 }, L: { rgb: [], labels: [...emptyLabels], rotation: 0 }, B: { rgb: [], labels: [...emptyLabels], rotation: 0 } });

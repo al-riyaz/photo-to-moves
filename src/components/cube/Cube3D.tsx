@@ -5,16 +5,17 @@ import * as THREE from 'three';
 
 // Standard Rubik's color palette
 const COLORS = {
-  U: '#ffffff', // white (top)
-  D: '#ffd500', // yellow (bottom)
-  F: '#009b48', // green (front)
-  B: '#0045ad', // blue (back)
-  R: '#b71234', // red (right)
-  L: '#ff5800', // orange (left)
+  U: '#ffffff',
+  D: '#ffd500',
+  F: '#009b48',
+  B: '#0045ad',
+  R: '#b71234',
+  L: '#ff5800',
   inner: '#111111',
 };
 
-type Move = string; // e.g. "R", "U'", "F2"
+type Move = string;
+type FaceLetter = 'U' | 'R' | 'F' | 'D' | 'L' | 'B';
 
 const AXIS_FOR_FACE: Record<string, { axis: 'x' | 'y' | 'z'; layer: 1 | 0 | -1; dir: 1 | -1 }> = {
   R: { axis: 'x', layer: 1, dir: -1 },
@@ -25,9 +26,38 @@ const AXIS_FOR_FACE: Record<string, { axis: 'x' | 'y' | 'z'; layer: 1 | 0 | -1; 
   B: { axis: 'z', layer: -1, dir: 1 },
 };
 
+// For each face: which axis the sticker sits on, the world coord on that axis,
+// and the two in-plane axes (u = column direction, v = row direction).
+// Reading order is row-major top-left to bottom-right of that face, viewed from outside.
+const FACE_READ: Record<
+  FaceLetter,
+  { normalAxis: 'x' | 'y' | 'z'; normalVal: 1 | -1; uAxis: 'x' | 'y' | 'z'; uDir: 1 | -1; vAxis: 'x' | 'y' | 'z'; vDir: 1 | -1 }
+> = {
+  // U (top, y=+1): rows go from back(-z is top of face? No: top row of U seen from above is the back row, i.e., z=-1)
+  U: { normalAxis: 'y', normalVal: 1, uAxis: 'x', uDir: 1, vAxis: 'z', vDir: 1 },
+  // D (bottom, y=-1): viewed from below — top row = front (z=+1)
+  D: { normalAxis: 'y', normalVal: -1, uAxis: 'x', uDir: 1, vAxis: 'z', vDir: -1 },
+  // F (front, z=+1): top row = U (y=+1), columns from L(-x) to R(+x)
+  F: { normalAxis: 'z', normalVal: 1, uAxis: 'x', uDir: 1, vAxis: 'y', vDir: -1 },
+  // B (back, z=-1): viewed from behind — top row = U, columns from R(+x) to L(-x)
+  B: { normalAxis: 'z', normalVal: -1, uAxis: 'x', uDir: -1, vAxis: 'y', vDir: -1 },
+  // R (right, x=+1): top row = U, columns from F(+z) to B(-z)
+  R: { normalAxis: 'x', normalVal: 1, uAxis: 'z', uDir: -1, vAxis: 'y', vDir: -1 },
+  // L (left, x=-1): top row = U, columns from B(-z) to F(+z)
+  L: { normalAxis: 'x', normalVal: -1, uAxis: 'z', uDir: 1, vAxis: 'y', vDir: -1 },
+};
+
+// Map original (home) cubie face direction to face letter
+function homeFaceFromDirection(dir: THREE.Vector3): FaceLetter | null {
+  const ax = Math.abs(dir.x), ay = Math.abs(dir.y), az = Math.abs(dir.z);
+  if (ax > ay && ax > az) return dir.x > 0 ? 'R' : 'L';
+  if (ay > ax && ay > az) return dir.y > 0 ? 'U' : 'D';
+  if (az > ax && az > ay) return dir.z > 0 ? 'F' : 'B';
+  return null;
+}
+
 function Cubie({ position }: { position: [number, number, number] }) {
   const [x, y, z] = position;
-  // Materials per face: order = +x, -x, +y, -y, +z, -z
   const materials = useMemo(
     () => [
       new THREE.MeshStandardMaterial({ color: x === 1 ? COLORS.R : COLORS.inner }),
@@ -41,7 +71,13 @@ function Cubie({ position }: { position: [number, number, number] }) {
   );
 
   return (
-    <mesh position={position} material={materials} castShadow receiveShadow userData={{ cubie: true }}>
+    <mesh
+      position={position}
+      material={materials}
+      castShadow
+      receiveShadow
+      userData={{ cubie: true, home: { x, y, z } }}
+    >
       <boxGeometry args={[0.96, 0.96, 0.96]} />
     </mesh>
   );
@@ -49,9 +85,11 @@ function Cubie({ position }: { position: [number, number, number] }) {
 
 type RubiksCubeProps = {
   queue: React.MutableRefObject<Move[]>;
+  groupOutRef: React.MutableRefObject<THREE.Group | null>;
+  idleRef: React.MutableRefObject<boolean>;
 };
 
-const RubiksCube: React.FC<RubiksCubeProps> = ({ queue }) => {
+const RubiksCube: React.FC<RubiksCubeProps> = ({ queue, groupOutRef, idleRef }) => {
   const groupRef = useRef<THREE.Group>(null);
   const animRef = useRef<{
     pivot: THREE.Group;
@@ -61,6 +99,10 @@ const RubiksCube: React.FC<RubiksCubeProps> = ({ queue }) => {
     cubies: THREE.Object3D[];
     axis: 'x' | 'y' | 'z';
   } | null>(null);
+
+  React.useEffect(() => {
+    groupOutRef.current = groupRef.current;
+  });
 
   const cubies = useMemo(() => {
     const arr: [number, number, number][] = [];
@@ -95,17 +137,22 @@ const RubiksCube: React.FC<RubiksCubeProps> = ({ queue }) => {
       pivot,
       targetAngle: angle,
       currentAngle: 0,
-      speed: Math.PI * 2, // rad/sec
+      speed: Math.PI * 2,
       cubies: selected,
       axis: meta.axis,
     };
+    idleRef.current = false;
   };
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
     if (!animRef.current) {
       const next = queue.current.shift();
-      if (next) startMove(next);
+      if (next) {
+        startMove(next);
+      } else {
+        idleRef.current = true;
+      }
       return;
     }
     const a = animRef.current;
@@ -116,7 +163,6 @@ const RubiksCube: React.FC<RubiksCubeProps> = ({ queue }) => {
     if (a.axis === 'z') a.pivot.rotation.z = a.currentAngle;
 
     if (Math.abs(a.currentAngle - a.targetAngle) < 1e-4) {
-      // Bake transform back into the parent group
       a.pivot.updateMatrixWorld(true);
       const parent = groupRef.current!;
       [...a.cubies].forEach((c) => {
@@ -140,8 +186,62 @@ const RubiksCube: React.FC<RubiksCubeProps> = ({ queue }) => {
   );
 };
 
+// Read 54 facelets from current cube state.
+function readFacelets(group: THREE.Group): Record<FaceLetter, FaceLetter[]> {
+  const cubies = group.children.filter((c) => c.userData.cubie);
+  // index cubies by their current rounded position
+  const byPos = new Map<string, THREE.Object3D>();
+  for (const c of cubies) {
+    const key = `${Math.round(c.position.x)},${Math.round(c.position.y)},${Math.round(c.position.z)}`;
+    byPos.set(key, c);
+  }
+
+  const result = {} as Record<FaceLetter, FaceLetter[]>;
+  const faces: FaceLetter[] = ['U', 'R', 'F', 'D', 'L', 'B'];
+  for (const f of faces) {
+    const meta = FACE_READ[f];
+    const stickers: FaceLetter[] = [];
+    // row 0..2 (top to bottom of face), col 0..2 (left to right)
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        // map row/col (0..2) to coordinates -1..+1 along u and v axes
+        const u = (col - 1) * meta.uDir;
+        const v = (row - 1) * meta.vDir;
+        const pos: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
+        pos[meta.normalAxis] = meta.normalVal;
+        pos[meta.uAxis] = u;
+        pos[meta.vAxis] = v;
+        const key = `${pos.x},${pos.y},${pos.z}`;
+        const cubie = byPos.get(key);
+        if (!cubie) {
+          stickers.push('U');
+          continue;
+        }
+        // Determine the outward world direction we want to sample
+        const worldDir = new THREE.Vector3(0, 0, 0);
+        worldDir[meta.normalAxis] = meta.normalVal;
+        // Convert that world direction into the cubie's local space
+        cubie.updateMatrixWorld(true);
+        const inv = new THREE.Matrix4().copy(cubie.matrixWorld).invert();
+        // Use direction transform (no translation): use a quaternion approach
+        const localDir = worldDir.clone().applyMatrix4(inv);
+        // Subtract the local origin's world->local translation effect by re-doing as direction:
+        const originLocal = new THREE.Vector3(0, 0, 0).applyMatrix4(inv);
+        localDir.sub(originLocal).normalize();
+        // The home face that originally pointed in localDir tells us the color
+        const home = homeFaceFromDirection(localDir);
+        stickers.push(home || 'U');
+      }
+    }
+    result[f] = stickers;
+  }
+  return result;
+}
+
 export type Cube3DHandle = {
   enqueue: (moves: string[]) => void;
+  waitUntilIdle: () => Promise<void>;
+  readFacelets: () => Record<FaceLetter, FaceLetter[]> | null;
 };
 
 type Props = {
@@ -150,12 +250,24 @@ type Props = {
 
 export const Cube3D: React.FC<Props> = ({ handleRef }) => {
   const queue = useRef<string[]>([]);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const idleRef = useRef<boolean>(true);
 
   React.useEffect(() => {
     handleRef.current = {
       enqueue: (moves) => {
         queue.current.push(...moves);
+        idleRef.current = false;
       },
+      waitUntilIdle: () =>
+        new Promise<void>((resolve) => {
+          const check = () => {
+            if (idleRef.current && queue.current.length === 0) resolve();
+            else setTimeout(check, 60);
+          };
+          check();
+        }),
+      readFacelets: () => (groupRef.current ? readFacelets(groupRef.current) : null),
     };
     return () => {
       handleRef.current = null;
@@ -168,7 +280,7 @@ export const Cube3D: React.FC<Props> = ({ handleRef }) => {
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 8, 5]} intensity={0.8} />
         <directionalLight position={[-5, -3, -5]} intensity={0.3} />
-        <RubiksCube queue={queue} />
+        <RubiksCube queue={queue} groupOutRef={groupRef} idleRef={idleRef} />
         <OrbitControls enablePan={false} />
       </Canvas>
     </div>
@@ -185,7 +297,6 @@ export function generateScramble(length = 20): string[] {
   while (moves.length < length) {
     const face = FACES[Math.floor(Math.random() * FACES.length)];
     if (face === lastFace) continue;
-    // avoid like R L R (same axis twice in a row sandwich)
     const sameAxis = (a: string, b: string) =>
       (['U', 'D'].includes(a) && ['U', 'D'].includes(b)) ||
       (['L', 'R'].includes(a) && ['L', 'R'].includes(b)) ||
