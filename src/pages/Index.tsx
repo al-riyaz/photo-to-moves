@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { Upload, Palette, Shuffle, Play } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
-import { useRef } from 'react';
 import type { Face, RGB } from '@/lib/color-utils';
 import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
@@ -22,16 +23,22 @@ const FACE_META: { face: Face; title: string }[] = [
 type FaceState = {
   rgb: RGB[];
   labels: (Face | '')[];
-  rotation: number; // 0..3, clockwise
+  rotation: number;
   imageUrl?: string;
 };
 
 const emptyLabels = Array.from({ length: 9 }, () => '' as const);
+const makeEmptyFaces = (): Record<Face, FaceState> => ({
+  U: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+  R: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+  F: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+  D: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+  L: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+  B: { rgb: [], labels: [...emptyLabels], rotation: 0 },
+});
 
 const Index: React.FC = () => {
-  const [faces, setFaces] = useState<Record<Face, FaceState>>(
-    () => ({ U: { rgb: [], labels: [...emptyLabels], rotation: 0 }, R: { rgb: [], labels: [...emptyLabels], rotation: 0 }, F: { rgb: [], labels: [...emptyLabels], rotation: 0 }, D: { rgb: [], labels: [...emptyLabels], rotation: 0 }, L: { rgb: [], labels: [...emptyLabels], rotation: 0 }, B: { rgb: [], labels: [...emptyLabels], rotation: 0 } })
-  );
+  const [faces, setFaces] = useState<Record<Face, FaceState>>(makeEmptyFaces);
   const [solution, setSolution] = useState<string | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [scramble, setScramble] = useState<string[]>([]);
@@ -88,7 +95,6 @@ const Index: React.FC = () => {
           return acc;
         }, {} as Record<Face, Face[]>);
       } else {
-        // Fall back to reading the 54 stickers from the 3D cube
         await cube3dRef.current?.waitUntilIdle();
         const read = cube3dRef.current?.readFacelets();
         if (!read) {
@@ -123,28 +129,144 @@ const Index: React.FC = () => {
     document.documentElement.style.setProperty('--cursor-y', `${y}%`);
   };
 
+  const moves = solution ? solution.split(' ').filter(Boolean) : [];
+  const invert = (m: string) => {
+    if (m.endsWith('2')) return m;
+    if (m.endsWith("'")) return m[0];
+    return m[0] + "'";
+  };
+
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
       <main className="container py-10 space-y-8">
         <header className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI — From photos to solved in seconds</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Upload six faces or enter colors manually. We map your cube state and compute an optimal solution using Kociemba’s two-phase algorithm.</p>
-          <div className="flex items-center justify-center gap-3">
-            <Button variant="hero" size="lg" onClick={buildAndSolve}>Solve Now</Button>
-            <a href="#manual" className="text-sm text-primary underline underline-offset-4">Manual entry</a>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Scramble, upload photos, or enter colors — then watch the optimal solution play out in 3D.
+          </p>
         </header>
 
-        <section className="grid md:grid-cols-2 gap-6">
-          <Card className="tilt-on-hover">
-            <CardHeader>
-              <CardTitle>3D Cube</CardTitle>
-              <CardDescription>Drag to rotate. Scramble to generate a random sequence.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Cube3D handleRef={cube3dRef} />
+        <section className="grid lg:grid-cols-5 gap-6">
+          {/* Big 3D cube */}
+          <Card className="lg:col-span-3 tilt-on-hover">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle>3D Cube</CardTitle>
+                <CardDescription>Drag to rotate. Use the icons to upload photos or edit colors.</CardDescription>
+              </div>
               <div className="flex items-center gap-2">
-                <Button variant="hero" onClick={handleScramble}>Scramble</Button>
+                {/* Upload icon dialog */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon" aria-label="Upload face images" title="Upload face images">
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Upload Face Images</DialogTitle>
+                      <DialogDescription>
+                        Top, Front, Right, Left, Back, Bottom — clear, well-lit photos work best.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      {FACE_META.map(({ face, title }) => (
+                        <CubeFaceUploader
+                          key={face}
+                          face={face}
+                          title={title}
+                          onProcessed={(rgb, url) => {
+                            setFaces((prev) => ({
+                              ...prev,
+                              [face]: { ...prev[face], rgb, imageUrl: url, labels: [...emptyLabels] },
+                            }));
+                            setTimeout(() => autoAssignForFace(face), 0);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Edit colors icon dialog */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon" aria-label="Edit colors" title="Edit colors">
+                      <Palette className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Review & Edit Colors</DialogTitle>
+                      <DialogDescription>
+                        Click stickers to cycle colors. Rotate a face if your photo orientation differs.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      {FACE_META.map(({ face, title }) => {
+                        const st = faces[face];
+                        return (
+                          <CubeColorGrid
+                            key={face}
+                            face={face}
+                            title={title}
+                            cells={st.labels}
+                            onChange={(cells) =>
+                              setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }))
+                            }
+                            onRotate={() => {
+                              setFaces((prev) => ({
+                                ...prev,
+                                [face]: {
+                                  ...prev[face],
+                                  rotation: (prev[face].rotation + 1) % 4,
+                                  rgb: prev[face].rgb.length ? (rotateGrid(prev[face].rgb, 1) as RGB[]) : prev[face].rgb,
+                                  labels: (prev[face].labels.filter(Boolean).length
+                                    ? rotateGrid(prev[face].labels, 1)
+                                    : prev[face].labels) as (Face | '')[],
+                                },
+                              }));
+                            }}
+                          />
+                        );
+                      })}
+                      <div className="sm:col-span-2">
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-U" /> U</span>
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-F" /> F</span>
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-R" /> R</span>
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-L" /> L</span>
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-B" /> B</span>
+                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-D" /> D</span>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="mx-auto w-full max-w-xl">
+                <Cube3D handleRef={cube3dRef} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="hero" onClick={handleScramble}>
+                  <Shuffle className="h-4 w-4" /> Scramble
+                </Button>
+                <Button variant="hero" onClick={buildAndSolve}>
+                  <Play className="h-4 w-4" /> Solve
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setFaces(makeEmptyFaces());
+                    setSolution(null);
+                    setStepIdx(0);
+                    setScramble([]);
+                  }}
+                >
+                  Reset
+                </Button>
                 {scramble.length > 0 && (
                   <span className="text-xs text-muted-foreground font-mono break-words">{scramble.join(' ')}</span>
                 )}
@@ -152,143 +274,55 @@ const Index: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="tilt-on-hover">
-            <CardHeader>
-              <CardTitle>Upload Images</CardTitle>
-              <CardDescription>Top, Front, Right, Left, Back, Bottom — clear, well-lit photos work best.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 gap-5">
-              {FACE_META.map(({ face, title }) => (
-                <CubeFaceUploader
-                  key={face}
-                  face={face}
-                  title={`${title}`}
-                  onProcessed={(rgb, url) => {
-                    setFaces((prev) => ({
-                      ...prev,
-                      [face]: { ...prev[face], rgb, imageUrl: url, labels: [...emptyLabels] },
-                    }));
-                    // Only auto-assign for this face if we already have all centers
-                    setTimeout(() => autoAssignForFace(face), 0);
-                  }}
-                />
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card id="manual" className="tilt-on-hover">
-            <CardHeader>
-              <CardTitle>Review & Edit Colors</CardTitle>
-              <CardDescription>Click stickers to cycle colors. Rotate a face if your photo orientation differs.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 gap-5">
-              {FACE_META.map(({ face, title }) => {
-                const st = faces[face];
-                return (
-                  <CubeColorGrid
-                    key={face}
-                    face={face}
-                    title={`${title}`}
-                    cells={st.labels}
-                    onChange={(cells) => setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }))}
-                    onRotate={() => {
-                      setFaces((prev) => ({
-                        ...prev,
-                        [face]: {
-                          ...prev[face],
-                          rotation: (prev[face].rotation + 1) % 4,
-                          rgb: prev[face].rgb.length ? (rotateGrid(prev[face].rgb, 1) as RGB[]) : prev[face].rgb,
-                          labels: (prev[face].labels.filter(Boolean).length ? rotateGrid(prev[face].labels, 1) : prev[face].labels) as (Face | '')[],
-                        },
-                      }));
-                    }}
-                  />
-                );
-              })}
-              <div className="sm:col-span-2">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-U" /> U (Top)
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-F" /> F (Front)
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-R" /> R (Right)
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-L" /> L (Left)
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-B" /> B (Back)
-                  <span className="inline-block w-4 h-4 rounded-sm border cube-D" /> D (Bottom)
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="grid md:grid-cols-3 gap-6 items-start">
-          <Card className="md:col-span-2 tilt-on-hover">
+          {/* Big solution panel */}
+          <Card className="lg:col-span-2 tilt-on-hover">
             <CardHeader>
               <CardTitle>Solution</CardTitle>
-              <CardDescription>Shortest sequence (where possible). Use the stepper to follow along.</CardDescription>
+              <CardDescription>Step through the moves — the 3D cube animates each one.</CardDescription>
             </CardHeader>
             <CardContent>
-              {solution ? (() => {
-                const moves = solution.split(' ').filter(Boolean);
-                const invert = (m: string) => {
-                  if (m.endsWith('2')) return m;
-                  if (m.endsWith("'")) return m[0];
-                  return m[0] + "'";
-                };
-                const tokens = moves.map((m, i) => (
-                  <span
-                    key={i}
-                    className={`px-1 rounded ${i === stepIdx ? 'bg-primary text-primary-foreground' : ''}`}
-                  >
-                    {m}
-                  </span>
-                ));
-                return (
-                  <div className="space-y-4">
-                    <div className="text-lg font-mono break-words flex flex-wrap gap-1">{tokens}</div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          if (stepIdx <= 0) return;
-                          const prevMove = moves[stepIdx - 1];
-                          cube3dRef.current?.enqueue([invert(prevMove)]);
-                          setStepIdx((i) => Math.max(0, i - 1));
-                        }}
+              {solution ? (
+                <div className="space-y-4">
+                  <div className="text-lg font-mono break-words flex flex-wrap gap-1">
+                    {moves.map((m, i) => (
+                      <span
+                        key={i}
+                        className={`px-1.5 py-0.5 rounded ${i === stepIdx ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
                       >
-                        Prev
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (stepIdx >= moves.length) return;
-                          const nextMove = moves[stepIdx];
-                          cube3dRef.current?.enqueue([nextMove]);
-                          setStepIdx((i) => Math.min(moves.length, i + 1));
-                        }}
-                      >
-                        Next
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Step {Math.min(stepIdx + 1, moves.length)} / {moves.length}
+                        {m}
                       </span>
-                    </div>
+                    ))}
                   </div>
-                );
-              })() : (
-                <p className="text-muted-foreground">No solution yet. Upload faces and click Solve.</p>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        if (stepIdx <= 0) return;
+                        const prevMove = moves[stepIdx - 1];
+                        cube3dRef.current?.enqueue([invert(prevMove)]);
+                        setStepIdx((i) => Math.max(0, i - 1));
+                      }}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (stepIdx >= moves.length) return;
+                        const nextMove = moves[stepIdx];
+                        cube3dRef.current?.enqueue([nextMove]);
+                        setStepIdx((i) => Math.min(moves.length, i + 1));
+                      }}
+                    >
+                      Next
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Step {Math.min(stepIdx + 1, moves.length)} / {moves.length}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No solution yet. Scramble or upload faces, then click Solve.</p>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="tilt-on-hover">
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-              <CardDescription>Validation requires 9 of each color (U, R, F, D, L, B).</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="hero" className="w-full" onClick={buildAndSolve}>Solve</Button>
-              <Button variant="outline" className="w-full" onClick={() => { setSolution(null); setStepIdx(0); }}>Clear Solution</Button>
-              <Button variant="ghost" className="w-full" onClick={() => {
-                setFaces({ U: { rgb: [], labels: [...emptyLabels], rotation: 0 }, R: { rgb: [], labels: [...emptyLabels], rotation: 0 }, F: { rgb: [], labels: [...emptyLabels], rotation: 0 }, D: { rgb: [], labels: [...emptyLabels], rotation: 0 }, L: { rgb: [], labels: [...emptyLabels], rotation: 0 }, B: { rgb: [], labels: [...emptyLabels], rotation: 0 } });
-              }}>Reset All</Button>
             </CardContent>
           </Card>
         </section>
