@@ -226,16 +226,53 @@ const Index: React.FC = () => {
               <CardDescription>Shortest sequence (where possible). Use the stepper to follow along.</CardDescription>
             </CardHeader>
             <CardContent>
-              {solution ? (
-                <div className="space-y-4">
-                  <div className="text-lg font-mono break-words">{solution}</div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="secondary" onClick={() => setStepIdx((i) => Math.max(0, i - 1))}>Prev</Button>
-                    <Button onClick={() => setStepIdx((i) => Math.min(solution.split(' ').length - 1, i + 1))}>Next</Button>
-                    <span className="text-sm text-muted-foreground">Step {stepIdx + 1} / {solution.split(' ').length}</span>
+              {solution ? (() => {
+                const moves = solution.split(' ').filter(Boolean);
+                const invert = (m: string) => {
+                  if (m.endsWith('2')) return m;
+                  if (m.endsWith("'")) return m[0];
+                  return m[0] + "'";
+                };
+                const tokens = moves.map((m, i) => (
+                  <span
+                    key={i}
+                    className={`px-1 rounded ${i === stepIdx ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {m}
+                  </span>
+                ));
+                return (
+                  <div className="space-y-4">
+                    <div className="text-lg font-mono break-words flex flex-wrap gap-1">{tokens}</div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          if (stepIdx <= 0) return;
+                          const prevMove = moves[stepIdx - 1];
+                          cube3dRef.current?.enqueue([invert(prevMove)]);
+                          setStepIdx((i) => Math.max(0, i - 1));
+                        }}
+                      >
+                        Prev
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (stepIdx >= moves.length) return;
+                          const nextMove = moves[stepIdx];
+                          cube3dRef.current?.enqueue([nextMove]);
+                          setStepIdx((i) => Math.min(moves.length, i + 1));
+                        }}
+                      >
+                        Next
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Step {Math.min(stepIdx + 1, moves.length)} / {moves.length}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                );
+              })() : (
                 <p className="text-muted-foreground">No solution yet. Upload faces and click Solve.</p>
               )}
             </CardContent>
