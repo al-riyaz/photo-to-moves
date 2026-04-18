@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
+import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
+import { useRef } from 'react';
 import type { Face, RGB } from '@/lib/color-utils';
 import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
@@ -32,6 +34,15 @@ const Index: React.FC = () => {
   );
   const [solution, setSolution] = useState<string | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
+  const [scramble, setScramble] = useState<string[]>([]);
+  const cube3dRef = useRef<Cube3DHandle | null>(null);
+
+  const handleScramble = () => {
+    const moves = generateScramble(20);
+    setScramble(moves);
+    cube3dRef.current?.enqueue(moves);
+    toast({ title: 'Scrambling', description: moves.join(' ') });
+  };
 
   const centers = useMemo(() => {
     const map = new Map<Face, RGB>();
@@ -116,6 +127,22 @@ const Index: React.FC = () => {
         </header>
 
         <section className="grid md:grid-cols-2 gap-6">
+          <Card className="tilt-on-hover">
+            <CardHeader>
+              <CardTitle>3D Cube</CardTitle>
+              <CardDescription>Drag to rotate. Scramble to generate a random sequence.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Cube3D handleRef={cube3dRef} />
+              <div className="flex items-center gap-2">
+                <Button variant="hero" onClick={handleScramble}>Scramble</Button>
+                {scramble.length > 0 && (
+                  <span className="text-xs text-muted-foreground font-mono break-words">{scramble.join(' ')}</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="tilt-on-hover">
             <CardHeader>
               <CardTitle>Upload Images</CardTitle>
