@@ -238,20 +238,59 @@ function readFacelets(group: THREE.Group): Record<FaceLetter, FaceLetter[]> {
   return result;
 }
 
+export type ViewName = 'F' | 'B' | 'U' | 'D' | 'L' | 'R';
+
+const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
+  F: [0, 0, 6],
+  B: [0, 0, -6],
+  U: [0, 6, 0.001],
+  D: [0, -6, 0.001],
+  L: [-6, 0, 0],
+  R: [6, 0, 0],
+};
+
 export type Cube3DHandle = {
   enqueue: (moves: string[]) => void;
   waitUntilIdle: () => Promise<void>;
   readFacelets: () => Record<FaceLetter, FaceLetter[]> | null;
+  setView: (view: ViewName) => void;
 };
 
 type Props = {
   handleRef: React.MutableRefObject<Cube3DHandle | null>;
 };
 
+type CameraTarget = {
+  pos: [number, number, number];
+  active: boolean;
+};
+
+const CameraRig: React.FC<{ targetRef: React.MutableRefObject<CameraTarget> }> = ({ targetRef }) => {
+  useFrame((state, delta) => {
+    const t = targetRef.current;
+    if (!t.active) return;
+    const cam = state.camera;
+    const [tx, ty, tz] = t.pos;
+    const lerp = Math.min(1, delta * 6);
+    cam.position.x += (tx - cam.position.x) * lerp;
+    cam.position.y += (ty - cam.position.y) * lerp;
+    cam.position.z += (tz - cam.position.z) * lerp;
+    cam.lookAt(0, 0, 0);
+    const dx = tx - cam.position.x, dy = ty - cam.position.y, dz = tz - cam.position.z;
+    if (dx * dx + dy * dy + dz * dz < 1e-3) {
+      cam.position.set(tx, ty, tz);
+      cam.lookAt(0, 0, 0);
+      t.active = false;
+    }
+  });
+  return null;
+};
+
 export const Cube3D: React.FC<Props> = ({ handleRef }) => {
   const queue = useRef<string[]>([]);
   const groupRef = useRef<THREE.Group | null>(null);
   const idleRef = useRef<boolean>(true);
+  const cameraTargetRef = useRef<CameraTarget>({ pos: [4, 4, 5], active: false });
 
   React.useEffect(() => {
     handleRef.current = {
@@ -268,6 +307,9 @@ export const Cube3D: React.FC<Props> = ({ handleRef }) => {
           check();
         }),
       readFacelets: () => (groupRef.current ? readFacelets(groupRef.current) : null),
+      setView: (view) => {
+        cameraTargetRef.current = { pos: VIEW_POSITIONS[view], active: true };
+      },
     };
     return () => {
       handleRef.current = null;
@@ -281,6 +323,7 @@ export const Cube3D: React.FC<Props> = ({ handleRef }) => {
         <directionalLight position={[5, 8, 5]} intensity={0.8} />
         <directionalLight position={[-5, -3, -5]} intensity={0.3} />
         <RubiksCube queue={queue} groupOutRef={groupRef} idleRef={idleRef} />
+        <CameraRig targetRef={cameraTargetRef} />
         <OrbitControls enablePan={false} />
       </Canvas>
     </div>

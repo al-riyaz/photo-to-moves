@@ -249,6 +249,23 @@ const Index: React.FC = () => {
               <div className="mx-auto w-full max-w-xl">
                 <Cube3D handleRef={cube3dRef} />
               </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {(['F', 'B', 'U', 'D', 'L', 'R'] as const).map((v) => {
+                  const labels: Record<typeof v, string> = {
+                    F: 'Front', B: 'Back', U: 'Top', D: 'Bottom', L: 'Left', R: 'Right',
+                  } as any;
+                  return (
+                    <Button
+                      key={v}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cube3dRef.current?.setView(v)}
+                    >
+                      {labels[v]}
+                    </Button>
+                  );
+                })}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
