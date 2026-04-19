@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Info, CheckCircle2 } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
@@ -92,24 +92,37 @@ const Index: React.FC = () => {
     setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: newLabels as Face[] } }));
   }, [canAutoMap, centers, faces]);
 
+  const facesFilled = useMemo(
+    () => FACE_ORDER.filter((f) => faces[f].labels.filter(Boolean).length === 9).length,
+    [faces]
+  );
+  const imagesUploaded = useMemo(
+    () => FACE_ORDER.filter((f) => faces[f].rgb.length === 9).length,
+    [faces]
+  );
   const allLabelsPresent = useMemo(() => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const applyLabelsTo3D = async (): Promise<boolean> => {
-    if (!allLabelsPresent) {
-      toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first (upload images or use Edit colors).' });
-      return false;
-    }
+  const applyLabelsTo3D = async (silent = true): Promise<boolean> => {
     await cube3dRef.current?.waitUntilIdle();
+    // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
     const grids = FACE_ORDER.reduce((acc, f) => {
-      acc[f] = faces[f].labels as Face[];
+      const labels = faces[f].labels;
+      const filled = labels.filter(Boolean).length;
+      if (filled === 0) {
+        acc[f] = Array(9).fill(f) as Face[];
+      } else {
+        acc[f] = labels.map((l) => (l || f)) as Face[];
+      }
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
     setSolution(null);
     setStepIdx(0);
-    toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    if (!silent) {
+      toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    }
     return true;
   };
 
@@ -212,20 +225,56 @@ const Index: React.FC = () => {
           )}
         </header>
 
+        {/* How to use — quick onboarding */}
+        <Card className="bg-card/60">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <div className="grid sm:grid-cols-3 gap-3 text-sm w-full">
+                <div>
+                  <p className="font-medium mb-0.5">1. Input your cube</p>
+                  <p className="text-muted-foreground">Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos, or <Palette className="inline h-3.5 w-3.5" /> to enter colors manually. The 3D cube updates live.</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-0.5">2. Verify the 3D cube</p>
+                  <p className="text-muted-foreground">Drag to rotate. Use the view buttons (Front, Top, 3D…) to inspect every face matches your real cube.</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-0.5">3. Solve</p>
+                  <p className="text-muted-foreground">Press <strong>Solve</strong> to compute the optimal sequence, then step through moves with Prev / Next.</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <section className="grid lg:grid-cols-5 gap-6">
           {/* Big 3D cube */}
           <Card className="lg:col-span-3 tilt-on-hover">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
               <div>
-                <CardTitle>3D Cube</CardTitle>
-                <CardDescription>Drag to rotate. Use the icons to upload photos or edit colors.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  3D Cube
+                  {facesFilled > 0 && (
+                    <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                      {facesFilled}/6 faces
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>Drag to rotate. Upload photos or edit colors — the cube updates live.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 {/* Upload icon dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Upload face images" title="Upload face images">
+                    <Button variant="outline" size="icon" aria-label="Upload face images" title="Upload face images" className="relative">
                       <Upload className="h-4 w-4" />
+                      {imagesUploaded > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] leading-none rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                          {imagesUploaded}
+                        </span>
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -260,8 +309,13 @@ const Index: React.FC = () => {
                 {/* Edit colors icon dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Edit colors" title="Edit colors">
+                    <Button variant="outline" size="icon" aria-label="Edit colors" title="Edit colors" className="relative">
                       <Palette className="h-4 w-4" />
+                      {facesFilled > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] leading-none rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                          {facesFilled}
+                        </span>
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
