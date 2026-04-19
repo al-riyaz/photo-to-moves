@@ -96,20 +96,25 @@ const Index: React.FC = () => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const applyLabelsTo3D = async (): Promise<boolean> => {
-    if (!allLabelsPresent) {
-      toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first (upload images or use Edit colors).' });
-      return false;
-    }
+  const applyLabelsTo3D = async (silent = true): Promise<boolean> => {
     await cube3dRef.current?.waitUntilIdle();
+    // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
     const grids = FACE_ORDER.reduce((acc, f) => {
-      acc[f] = faces[f].labels as Face[];
+      const labels = faces[f].labels;
+      const filled = labels.filter(Boolean).length;
+      if (filled === 0) {
+        acc[f] = Array(9).fill(f) as Face[];
+      } else {
+        acc[f] = labels.map((l) => (l || f)) as Face[];
+      }
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
     setSolution(null);
     setStepIdx(0);
-    toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    if (!silent) {
+      toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    }
     return true;
   };
 
