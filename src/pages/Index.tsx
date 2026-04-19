@@ -316,10 +316,10 @@ const Index: React.FC = () => {
                 <Cube3D handleRef={cube3dRef} />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {(['F', 'B', 'U', 'D', 'L', 'R'] as const).map((v) => {
-                  const labels: Record<typeof v, string> = {
-                    F: 'Front', B: 'Back', U: 'Top', D: 'Bottom', L: 'Left', R: 'Right',
-                  } as any;
+                {(['F', 'B', 'U', 'D', 'L', 'R', 'ISO'] as const).map((v) => {
+                  const labels: Record<string, string> = {
+                    F: 'Front', B: 'Back', U: 'Top', D: 'Bottom', L: 'Left', R: 'Right', ISO: '3D',
+                  };
                   return (
                     <Button
                       key={v}
@@ -327,6 +327,7 @@ const Index: React.FC = () => {
                       size="sm"
                       onClick={() => cube3dRef.current?.setView(v)}
                     >
+                      {v === 'ISO' && <Box className="h-4 w-4" />}
                       {labels[v]}
                     </Button>
                   );
@@ -336,8 +337,14 @@ const Index: React.FC = () => {
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
-                <Button variant="hero" onClick={buildAndSolve}>
-                  <Play className="h-4 w-4" /> Solve
+                <Button variant="outline" onClick={() => applyLabelsTo3D()}>
+                  <Wand2 className="h-4 w-4" /> Apply colors to 3D
+                </Button>
+                <Button variant="hero" onClick={() => buildAndSolve(true)}>
+                  <Play className="h-4 w-4" /> Apply & Solve
+                </Button>
+                <Button variant="secondary" onClick={() => buildAndSolve(false)}>
+                  <Play className="h-4 w-4" /> Solve current 3D
                 </Button>
                 <Button
                   variant="ghost"
