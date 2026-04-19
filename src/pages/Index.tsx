@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Info, CheckCircle2 } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
@@ -216,6 +216,29 @@ const Index: React.FC = () => {
             <p className="text-xs text-muted-foreground">Signed in as {user.email} — solutions are saved to your history.</p>
           )}
         </header>
+
+        {/* How to use — quick onboarding */}
+        <Card className="bg-card/60">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <div className="grid sm:grid-cols-3 gap-3 text-sm w-full">
+                <div>
+                  <p className="font-medium mb-0.5">1. Input your cube</p>
+                  <p className="text-muted-foreground">Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos, or <Palette className="inline h-3.5 w-3.5" /> to enter colors manually. The 3D cube updates live.</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-0.5">2. Verify the 3D cube</p>
+                  <p className="text-muted-foreground">Drag to rotate. Use the view buttons (Front, Top, 3D…) to inspect every face matches your real cube.</p>
+                </div>
+                <div>
+                  <p className="font-medium mb-0.5">3. Solve</p>
+                  <p className="text-muted-foreground">Press <strong>Solve</strong> to compute the optimal sequence, then step through moves with Prev / Next.</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <section className="grid lg:grid-cols-5 gap-6">
           {/* Big 3D cube */}
