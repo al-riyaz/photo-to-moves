@@ -238,7 +238,7 @@ function readFacelets(group: THREE.Group): Record<FaceLetter, FaceLetter[]> {
   return result;
 }
 
-export type ViewName = 'F' | 'B' | 'U' | 'D' | 'L' | 'R';
+export type ViewName = 'F' | 'B' | 'U' | 'D' | 'L' | 'R' | 'ISO';
 
 const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
   F: [0, 0, 6],
@@ -247,13 +247,67 @@ const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
   D: [0, -6, 0.001],
   L: [-6, 0, 0],
   R: [6, 0, 0],
+  ISO: [4, 4, 5],
 };
+
+const COLOR_BY_FACE: Record<FaceLetter, string> = {
+  U: COLORS.U, D: COLORS.D, F: COLORS.F, B: COLORS.B, R: COLORS.R, L: COLORS.L,
+};
+
+// Reset cubies to home positions/rotations and paint stickers from a facelets map.
+function paintFacelets(group: THREE.Group, grids: Record<FaceLetter, FaceLetter[]>) {
+  const cubies = group.children.filter((c) => c.userData.cubie) as THREE.Mesh[];
+  for (const c of cubies) {
+    const home = c.userData.home as { x: number; y: number; z: number };
+    c.position.set(home.x, home.y, home.z);
+    c.rotation.set(0, 0, 0);
+    c.updateMatrixWorld(true);
+    const mats = c.material as THREE.MeshStandardMaterial[];
+    // material order: +x, -x, +y, -y, +z, -z
+    mats[0].color.set(home.x === 1 ? COLORS.inner : COLORS.inner);
+    mats[1].color.set(COLORS.inner);
+    mats[2].color.set(COLORS.inner);
+    mats[3].color.set(COLORS.inner);
+    mats[4].color.set(COLORS.inner);
+    mats[5].color.set(COLORS.inner);
+  }
+  // Now apply colors per face based on grids (row-major as defined in FACE_READ).
+  const faces: FaceLetter[] = ['U', 'R', 'F', 'D', 'L', 'B'];
+  for (const f of faces) {
+    const meta = FACE_READ[f];
+    const stickers = grids[f];
+    if (!stickers || stickers.length !== 9) continue;
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const u = (col - 1) * meta.uDir;
+        const v = (row - 1) * meta.vDir;
+        const pos: any = { x: 0, y: 0, z: 0 };
+        pos[meta.normalAxis] = meta.normalVal;
+        pos[meta.uAxis] = u;
+        pos[meta.vAxis] = v;
+        const cubie = cubies.find((c) => {
+          const h = c.userData.home as any;
+          return h.x === pos.x && h.y === pos.y && h.z === pos.z;
+        });
+        if (!cubie) continue;
+        const mats = cubie.material as THREE.MeshStandardMaterial[];
+        // Pick material index by outward axis
+        const matIdx =
+          meta.normalAxis === 'x' ? (meta.normalVal === 1 ? 0 : 1)
+          : meta.normalAxis === 'y' ? (meta.normalVal === 1 ? 2 : 3)
+          : (meta.normalVal === 1 ? 4 : 5);
+        mats[matIdx].color.set(COLOR_BY_FACE[stickers[row * 3 + col]] || COLORS.inner);
+      }
+    }
+  }
+}
 
 export type Cube3DHandle = {
   enqueue: (moves: string[]) => void;
   waitUntilIdle: () => Promise<void>;
   readFacelets: () => Record<FaceLetter, FaceLetter[]> | null;
   setView: (view: ViewName) => void;
+  paintFromFacelets: (grids: Record<string, string[]>) => void;
 };
 
 type Props = {
