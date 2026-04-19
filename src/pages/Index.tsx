@@ -251,6 +251,11 @@ const Index: React.FC = () => {
                         />
                       ))}
                     </div>
+                    <div className="flex justify-end pt-2">
+                      <Button variant="hero" onClick={() => buildAndSolve(false)}>
+                        <Play className="h-4 w-4" /> Solve current 3D
+                      </Button>
+                    </div>
                   </DialogContent>
                 </Dialog>
 
@@ -297,13 +302,18 @@ const Index: React.FC = () => {
                         );
                       })}
                       <div className="sm:col-span-2">
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-U" /> U</span>
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-F" /> F</span>
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-R" /> R</span>
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-L" /> L</span>
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-B" /> B</span>
-                          <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-D" /> D</span>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-U" /> U</span>
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-F" /> F</span>
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-R" /> R</span>
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-L" /> L</span>
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-B" /> B</span>
+                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-D" /> D</span>
+                          </div>
+                          <Button variant="hero" onClick={() => buildAndSolve(true)}>
+                            <Wand2 className="h-4 w-4" /> Apply colors & Solve
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -336,15 +346,6 @@ const Index: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
-                </Button>
-                <Button variant="outline" onClick={() => applyLabelsTo3D()}>
-                  <Wand2 className="h-4 w-4" /> Apply colors to 3D
-                </Button>
-                <Button variant="hero" onClick={() => buildAndSolve(true)}>
-                  <Play className="h-4 w-4" /> Apply & Solve
-                </Button>
-                <Button variant="secondary" onClick={() => buildAndSolve(false)}>
-                  <Play className="h-4 w-4" /> Solve current 3D
                 </Button>
                 <Button
                   variant="ghost"
