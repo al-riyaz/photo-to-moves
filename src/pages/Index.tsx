@@ -253,15 +253,28 @@ const Index: React.FC = () => {
           <Card className="lg:col-span-3 tilt-on-hover">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
               <div>
-                <CardTitle>3D Cube</CardTitle>
-                <CardDescription>Drag to rotate. Use the icons to upload photos or edit colors.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  3D Cube
+                  {facesFilled > 0 && (
+                    <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                      {facesFilled}/6 faces
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>Drag to rotate. Upload photos or edit colors — the cube updates live.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 {/* Upload icon dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Upload face images" title="Upload face images">
+                    <Button variant="outline" size="icon" aria-label="Upload face images" title="Upload face images" className="relative">
                       <Upload className="h-4 w-4" />
+                      {imagesUploaded > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] leading-none rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                          {imagesUploaded}
+                        </span>
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -296,8 +309,13 @@ const Index: React.FC = () => {
                 {/* Edit colors icon dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Edit colors" title="Edit colors">
+                    <Button variant="outline" size="icon" aria-label="Edit colors" title="Edit colors" className="relative">
                       <Palette className="h-4 w-4" />
+                      {facesFilled > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] leading-none rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                          {facesFilled}
+                        </span>
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
