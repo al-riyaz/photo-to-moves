@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Wand2 } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
@@ -228,14 +228,14 @@ const Index: React.FC = () => {
                       <Upload className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Upload Face Images</DialogTitle>
                       <DialogDescription>
-                        Top, Front, Right, Left, Back, Bottom — clear, well-lit photos work best.
+                        Top, Front, Right, Left, Back, Bottom — clear, well-lit photos. Cube updates live.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid sm:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {FACE_META.map(({ face, title }) => (
                         <CubeFaceUploader
                           key={face}
@@ -246,15 +246,13 @@ const Index: React.FC = () => {
                               ...prev,
                               [face]: { ...prev[face], rgb, imageUrl: url, labels: [...emptyLabels] },
                             }));
-                            setTimeout(() => autoAssignForFace(face), 0);
+                            setTimeout(() => {
+                              autoAssignForFace(face);
+                              setTimeout(() => applyLabelsTo3D(), 0);
+                            }, 0);
                           }}
                         />
                       ))}
-                    </div>
-                    <div className="flex justify-end pt-2">
-                      <Button variant="hero" onClick={() => buildAndSolve(false)}>
-                        <Play className="h-4 w-4" /> Solve current 3D
-                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -266,14 +264,14 @@ const Index: React.FC = () => {
                       <Palette className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Review & Edit Colors</DialogTitle>
                       <DialogDescription>
-                        Click stickers to cycle colors. Rotate a face if your photo orientation differs.
+                        Click stickers to cycle colors. Cube updates live.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid sm:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {FACE_META.map(({ face, title }) => {
                         const st = faces[face];
                         return (
@@ -282,9 +280,10 @@ const Index: React.FC = () => {
                             face={face}
                             title={title}
                             cells={st.labels}
-                            onChange={(cells) =>
-                              setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }))
-                            }
+                            onChange={(cells) => {
+                              setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }));
+                              setTimeout(() => applyLabelsTo3D(), 0);
+                            }}
                             onRotate={() => {
                               setFaces((prev) => ({
                                 ...prev,
@@ -297,25 +296,19 @@ const Index: React.FC = () => {
                                     : prev[face].labels) as (Face | '')[],
                                 },
                               }));
+                              setTimeout(() => applyLabelsTo3D(), 0);
                             }}
                           />
                         );
                       })}
-                      <div className="sm:col-span-2">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-U" /> U</span>
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-F" /> F</span>
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-R" /> R</span>
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-L" /> L</span>
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-B" /> B</span>
-                            <span className="inline-flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-sm border cube-D" /> D</span>
-                          </div>
-                          <Button variant="hero" onClick={() => buildAndSolve(true)}>
-                            <Wand2 className="h-4 w-4" /> Apply colors & Solve
-                          </Button>
-                        </div>
-                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-U" /> U</span>
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-F" /> F</span>
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-R" /> R</span>
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-L" /> L</span>
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-B" /> B</span>
+                      <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm border cube-D" /> D</span>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -344,6 +337,9 @@ const Index: React.FC = () => {
                 })}
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <Button variant="hero" onClick={() => buildAndSolve(false)}>
+                  <Play className="h-4 w-4" /> Solve
+                </Button>
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
