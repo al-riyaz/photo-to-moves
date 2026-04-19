@@ -96,14 +96,38 @@ const Index: React.FC = () => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const buildAndSolve = async () => {
+  const applyLabelsTo3D = async (): Promise<boolean> => {
+    if (!allLabelsPresent) {
+      toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first (upload images or use Edit colors).' });
+      return false;
+    }
+    await cube3dRef.current?.waitUntilIdle();
+    const grids = FACE_ORDER.reduce((acc, f) => {
+      acc[f] = faces[f].labels as Face[];
+      return acc;
+    }, {} as Record<Face, Face[]>);
+    cube3dRef.current?.paintFromFacelets(grids as any);
+    setSolution(null);
+    setStepIdx(0);
+    toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    return true;
+  };
+
+  const buildAndSolve = async (sourceFromLabels?: boolean) => {
     try {
       let grids: Record<Face, Face[]>;
-      if (allLabelsPresent) {
+      let scrambleStr: string | null = scramble.length ? scramble.join(' ') : null;
+      if (sourceFromLabels || allLabelsPresent) {
+        if (!allLabelsPresent) {
+          toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first.' });
+          return;
+        }
         grids = FACE_ORDER.reduce((acc, f) => {
           acc[f] = faces[f].labels as Face[];
           return acc;
         }, {} as Record<Face, Face[]>);
+        cube3dRef.current?.paintFromFacelets(grids as any);
+        scrambleStr = null;
       } else {
         await cube3dRef.current?.waitUntilIdle();
         const read = cube3dRef.current?.readFacelets();
@@ -125,10 +149,28 @@ const Index: React.FC = () => {
       setSolution(res);
       setStepIdx(0);
       toast({ title: 'Solution found', description: res });
+
+      if (user) {
+        const moveCount = res === 'Already solved' ? 0 : res.split(' ').filter(Boolean).length;
+        const { error } = await supabase.from('solves').insert({
+          user_id: user.id,
+          scramble: scrambleStr,
+          facelets,
+          solution: res,
+          move_count: moveCount,
+        });
+        if (error) console.error('Save solve failed', error);
+        else toast({ title: 'Saved', description: 'Solution saved to your history.' });
+      }
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Solve failed', description: e?.message || 'Unknown error' });
     }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    toast({ title: 'Signed out' });
   };
 
   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
