@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Wand2 } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
