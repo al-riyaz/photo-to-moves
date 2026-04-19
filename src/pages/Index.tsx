@@ -92,6 +92,14 @@ const Index: React.FC = () => {
     setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: newLabels as Face[] } }));
   }, [canAutoMap, centers, faces]);
 
+  const facesFilled = useMemo(
+    () => FACE_ORDER.filter((f) => faces[f].labels.filter(Boolean).length === 9).length,
+    [faces]
+  );
+  const imagesUploaded = useMemo(
+    () => FACE_ORDER.filter((f) => faces[f].rgb.length === 9).length,
+    [faces]
+  );
   const allLabelsPresent = useMemo(() => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
