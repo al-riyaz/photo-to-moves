@@ -364,6 +364,9 @@ export const Cube3D: React.FC<Props> = ({ handleRef }) => {
       setView: (view) => {
         cameraTargetRef.current = { pos: VIEW_POSITIONS[view], active: true };
       },
+      paintFromFacelets: (grids) => {
+        if (groupRef.current) paintFacelets(groupRef.current, grids as any);
+      },
     };
     return () => {
       handleRef.current = null;
