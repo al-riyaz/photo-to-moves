@@ -191,11 +191,25 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
       <main className="container py-10 space-y-8">
-        <header className="text-center space-y-3">
+        <header className="relative text-center space-y-3">
+          <div className="absolute right-0 top-0">
+            {user ? (
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4" /> Sign out
+              </Button>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/auth"><LogIn className="h-4 w-4" /> Sign in</Link>
+              </Button>
+            )}
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Scramble, upload photos, or enter colors — then watch the optimal solution play out in 3D.
           </p>
+          {user && (
+            <p className="text-xs text-muted-foreground">Signed in as {user.email} — solutions are saved to your history.</p>
+          )}
         </header>
 
         <section className="grid lg:grid-cols-5 gap-6">
