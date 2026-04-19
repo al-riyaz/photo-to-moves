@@ -337,6 +337,9 @@ const Index: React.FC = () => {
                 })}
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <Button variant="hero" onClick={() => buildAndSolve(false)}>
+                  <Play className="h-4 w-4" /> Solve
+                </Button>
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
