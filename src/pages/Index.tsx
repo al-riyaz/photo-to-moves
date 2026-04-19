@@ -46,6 +46,13 @@ const Index: React.FC = () => {
   const [stepIdx, setStepIdx] = useState(0);
   const [scramble, setScramble] = useState<string[]>([]);
   const cube3dRef = useRef<Cube3DHandle | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const handleScramble = () => {
     const moves = generateScramble(20);
