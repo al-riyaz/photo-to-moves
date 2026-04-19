@@ -1,15 +1,18 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Wand2 } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
 import type { Face, RGB } from '@/lib/color-utils';
 import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 const FACE_META: { face: Face; title: string }[] = [
   { face: 'U', title: 'Top' },
@@ -43,6 +46,13 @@ const Index: React.FC = () => {
   const [stepIdx, setStepIdx] = useState(0);
   const [scramble, setScramble] = useState<string[]>([]);
   const cube3dRef = useRef<Cube3DHandle | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const handleScramble = () => {
     const moves = generateScramble(20);
@@ -86,14 +96,38 @@ const Index: React.FC = () => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const buildAndSolve = async () => {
+  const applyLabelsTo3D = async (): Promise<boolean> => {
+    if (!allLabelsPresent) {
+      toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first (upload images or use Edit colors).' });
+      return false;
+    }
+    await cube3dRef.current?.waitUntilIdle();
+    const grids = FACE_ORDER.reduce((acc, f) => {
+      acc[f] = faces[f].labels as Face[];
+      return acc;
+    }, {} as Record<Face, Face[]>);
+    cube3dRef.current?.paintFromFacelets(grids as any);
+    setSolution(null);
+    setStepIdx(0);
+    toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
+    return true;
+  };
+
+  const buildAndSolve = async (sourceFromLabels?: boolean) => {
     try {
       let grids: Record<Face, Face[]>;
-      if (allLabelsPresent) {
+      let scrambleStr: string | null = scramble.length ? scramble.join(' ') : null;
+      if (sourceFromLabels || allLabelsPresent) {
+        if (!allLabelsPresent) {
+          toast({ title: 'Incomplete colors', description: 'Fill all 54 stickers first.' });
+          return;
+        }
         grids = FACE_ORDER.reduce((acc, f) => {
           acc[f] = faces[f].labels as Face[];
           return acc;
         }, {} as Record<Face, Face[]>);
+        cube3dRef.current?.paintFromFacelets(grids as any);
+        scrambleStr = null;
       } else {
         await cube3dRef.current?.waitUntilIdle();
         const read = cube3dRef.current?.readFacelets();
@@ -115,10 +149,28 @@ const Index: React.FC = () => {
       setSolution(res);
       setStepIdx(0);
       toast({ title: 'Solution found', description: res });
+
+      if (user) {
+        const moveCount = res === 'Already solved' ? 0 : res.split(' ').filter(Boolean).length;
+        const { error } = await supabase.from('solves').insert({
+          user_id: user.id,
+          scramble: scrambleStr,
+          facelets,
+          solution: res,
+          move_count: moveCount,
+        });
+        if (error) console.error('Save solve failed', error);
+        else toast({ title: 'Saved', description: 'Solution saved to your history.' });
+      }
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Solve failed', description: e?.message || 'Unknown error' });
     }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    toast({ title: 'Signed out' });
   };
 
   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -139,11 +191,25 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
       <main className="container py-10 space-y-8">
-        <header className="text-center space-y-3">
+        <header className="relative text-center space-y-3">
+          <div className="absolute right-0 top-0">
+            {user ? (
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4" /> Sign out
+              </Button>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/auth"><LogIn className="h-4 w-4" /> Sign in</Link>
+              </Button>
+            )}
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Scramble, upload photos, or enter colors — then watch the optimal solution play out in 3D.
           </p>
+          {user && (
+            <p className="text-xs text-muted-foreground">Signed in as {user.email} — solutions are saved to your history.</p>
+          )}
         </header>
 
         <section className="grid lg:grid-cols-5 gap-6">
@@ -250,10 +316,10 @@ const Index: React.FC = () => {
                 <Cube3D handleRef={cube3dRef} />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                {(['F', 'B', 'U', 'D', 'L', 'R'] as const).map((v) => {
-                  const labels: Record<typeof v, string> = {
-                    F: 'Front', B: 'Back', U: 'Top', D: 'Bottom', L: 'Left', R: 'Right',
-                  } as any;
+                {(['F', 'B', 'U', 'D', 'L', 'R', 'ISO'] as const).map((v) => {
+                  const labels: Record<string, string> = {
+                    F: 'Front', B: 'Back', U: 'Top', D: 'Bottom', L: 'Left', R: 'Right', ISO: '3D',
+                  };
                   return (
                     <Button
                       key={v}
@@ -261,6 +327,7 @@ const Index: React.FC = () => {
                       size="sm"
                       onClick={() => cube3dRef.current?.setView(v)}
                     >
+                      {v === 'ISO' && <Box className="h-4 w-4" />}
                       {labels[v]}
                     </Button>
                   );
@@ -270,8 +337,14 @@ const Index: React.FC = () => {
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
-                <Button variant="hero" onClick={buildAndSolve}>
-                  <Play className="h-4 w-4" /> Solve
+                <Button variant="outline" onClick={() => applyLabelsTo3D()}>
+                  <Wand2 className="h-4 w-4" /> Apply colors to 3D
+                </Button>
+                <Button variant="hero" onClick={() => buildAndSolve(true)}>
+                  <Play className="h-4 w-4" /> Apply & Solve
+                </Button>
+                <Button variant="secondary" onClick={() => buildAndSolve(false)}>
+                  <Play className="h-4 w-4" /> Solve current 3D
                 </Button>
                 <Button
                   variant="ghost"
