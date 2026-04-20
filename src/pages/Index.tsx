@@ -1,18 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Palette, Shuffle, Play, Box, LogIn, LogOut, Info, CheckCircle2 } from 'lucide-react';
+import { Upload, Palette, Shuffle, Play, Box, Info, CheckCircle2 } from 'lucide-react';
 import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
 import type { Face, RGB } from '@/lib/color-utils';
 import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
-import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@supabase/supabase-js';
 
 const FACE_META: { face: Face; title: string }[] = [
   { face: 'U', title: 'Top' },
@@ -46,13 +43,6 @@ const Index: React.FC = () => {
   const [stepIdx, setStepIdx] = useState(0);
   const [scramble, setScramble] = useState<string[]>([]);
   const cube3dRef = useRef<Cube3DHandle | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
   const handleScramble = () => {
     const moves = generateScramble(20);
@@ -174,27 +164,10 @@ const Index: React.FC = () => {
       setStepIdx(0);
       toast({ title: 'Solution found', description: res });
 
-      if (user) {
-        const moveCount = res === 'Already solved' ? 0 : res.split(' ').filter(Boolean).length;
-        const { error } = await supabase.from('solves').insert({
-          user_id: user.id,
-          scramble: scrambleStr,
-          facelets,
-          solution: res,
-          move_count: moveCount,
-        });
-        if (error) console.error('Save solve failed', error);
-        else toast({ title: 'Saved', description: 'Solution saved to your history.' });
-      }
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Solve failed', description: e?.message || 'Unknown error' });
     }
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    toast({ title: 'Signed out' });
   };
 
   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -215,25 +188,11 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
       <main className="container max-w-6xl py-6 space-y-6">
-        <header className="relative text-center space-y-3">
-          <div className="absolute right-0 top-0">
-            {user ? (
-              <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="h-4 w-4" /> Sign out
-              </Button>
-            ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/auth"><LogIn className="h-4 w-4" /> Sign in</Link>
-              </Button>
-            )}
-          </div>
+        <header className="text-center space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Scramble, upload photos, or enter colors — then watch the optimal solution play out in 3D.
           </p>
-          {user && (
-            <p className="text-xs text-muted-foreground">Signed in as {user.email} — solutions are saved to your history.</p>
-          )}
         </header>
 
         {/* How to use — quick onboarding */}
