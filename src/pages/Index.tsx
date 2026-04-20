@@ -281,16 +281,8 @@ const Index: React.FC = () => {
                           face={face}
                           title={title}
                           onProcessed={(rgb, url) => {
-                            // Compute labels immediately using measured centers (when available) + reference palette.
-                            const centerEntries: [Face, RGB][] = FACE_ORDER.map((f) => [f, centers.get(f) ?? REF_COLORS[f]]);
-                            const newLabels = (rgb as RGB[]).map((c) => {
-                              let best: { d: number; face: Face } | null = null;
-                              for (const [label, ctr] of centerEntries) {
-                                const d = rgbDistance(c, ctr);
-                                if (!best || d < best.d) best = { d, face: label };
-                              }
-                              return best!.face;
-                            }) as Face[];
+                            // Use HSV-based classifier — robust to lighting/white-balance.
+                            const newLabels = (rgb as RGB[]).map((c) => classifyStickerColor(c)) as Face[];
                             setFaces((prev) => ({
                               ...prev,
                               [face]: { ...prev[face], rgb, imageUrl: url, rotation: 0, labels: newLabels },
