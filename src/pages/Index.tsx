@@ -241,18 +241,30 @@ const Index: React.FC = () => {
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-              <div className="grid sm:grid-cols-3 gap-3 text-sm w-full">
+              <div className="grid sm:grid-cols-3 gap-4 text-sm w-full">
                 <div>
-                  <p className="font-medium mb-0.5">1. Input your cube</p>
-                  <p className="text-muted-foreground">Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos, or <Palette className="inline h-3.5 w-3.5" /> to enter colors manually. The 3D cube updates live.</p>
+                  <p className="font-medium mb-1">1. Input your cube</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li>Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos (Top, Front, Right, Left, Back, Bottom).</li>
+                    <li>Or click <Palette className="inline h-3.5 w-3.5" /> and tap stickers to cycle colors manually.</li>
+                    <li>Use <strong>Rotate</strong> in a face if it's mis-oriented.</li>
+                  </ul>
                 </div>
                 <div>
-                  <p className="font-medium mb-0.5">2. Verify the 3D cube</p>
-                  <p className="text-muted-foreground">Drag to rotate. Use the view buttons (Front, Top, 3D…) to inspect every face matches your real cube.</p>
+                  <p className="font-medium mb-1">2. Verify the 3D cube</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li>The 3D cube updates live as you input colors.</li>
+                    <li>Drag to rotate, or use <strong>Front / Top / 3D…</strong> view buttons.</li>
+                    <li>Re-open <Palette className="inline h-3.5 w-3.5" /> to fix any wrong stickers.</li>
+                  </ul>
                 </div>
                 <div>
-                  <p className="font-medium mb-0.5">3. Solve</p>
-                  <p className="text-muted-foreground">Press <strong>Solve</strong> to compute the optimal sequence, then step through moves with Prev / Next.</p>
+                  <p className="font-medium mb-1">3. Scramble or Solve</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li><strong>Scramble</strong> randomizes the cube to practice.</li>
+                    <li><strong>Solve</strong> computes the optimal sequence (Kociemba).</li>
+                    <li>Use <strong>Prev / Next</strong> to step through moves on the 3D cube.</li>
+                  </ul>
                 </div>
               </div>
             </div>
