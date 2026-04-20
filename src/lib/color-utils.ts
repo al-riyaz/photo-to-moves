@@ -21,6 +21,48 @@ export function rgbDistance(a: RGB, b: RGB): number {
   return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
+export function rgbToHsv([r, g, b]: RGB): [number, number, number] {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === rn) h = ((gn - bn) / d) % 6;
+    else if (max === gn) h = (bn - rn) / d + 2;
+    else h = (rn - gn) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  return [h, s, v];
+}
+
+/**
+ * Classify a sticker color into one of the 6 cube face letters using HSV.
+ * Robust to lighting variations: uses value/saturation to detect white,
+ * hue ranges for chromatic colors.
+ */
+export function classifyStickerColor(rgb: RGB): Face {
+  const [h, s, v] = rgbToHsv(rgb);
+  // White: low saturation, high value
+  if (s < 0.25 && v > 0.55) return 'U';
+  // Very dark / unlit fallback — treat as closest by hue anyway
+  // Yellow: ~40-70
+  if (h >= 40 && h < 70) return 'D';
+  // Orange: ~10-40
+  if (h >= 10 && h < 40) return 'L';
+  // Red: 0-10 or 340-360
+  if (h < 10 || h >= 340) return 'R';
+  // Green: 70-170
+  if (h >= 70 && h < 170) return 'F';
+  // Blue: 170-260
+  if (h >= 170 && h < 260) return 'B';
+  // Magenta-ish → likely red under cool light
+  return 'R';
+}
+
 export function rotateGrid<T>(cells: T[], times: number): T[] {
   // Rotate 3x3 grid clockwise 'times' times
   const t = ((times % 4) + 4) % 4;
