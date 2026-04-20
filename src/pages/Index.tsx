@@ -8,7 +8,7 @@ import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
 import type { Face, RGB } from '@/lib/color-utils';
-import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
+import { FACE_ORDER, rgbDistance, rotateGrid, classifyStickerColor } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
 
 const FACE_META: { face: Face; title: string }[] = [
