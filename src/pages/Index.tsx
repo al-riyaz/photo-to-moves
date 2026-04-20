@@ -345,7 +345,6 @@ const Index: React.FC = () => {
                             cells={st.labels}
                             onChange={(cells) => {
                               setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }));
-                              setTimeout(() => applyLabelsTo3D(), 0);
                             }}
                             onRotate={() => {
                               setFaces((prev) => ({
@@ -359,7 +358,6 @@ const Index: React.FC = () => {
                                     : prev[face].labels) as (Face | '')[],
                                 },
                               }));
-                              setTimeout(() => applyLabelsTo3D(), 0);
                             }}
                           />
                         );
