@@ -8,7 +8,7 @@ import { CubeFaceUploader } from '@/components/cube/CubeFaceUploader';
 import { CubeColorGrid } from '@/components/cube/CubeColorGrid';
 import { Cube3D, generateScramble, type Cube3DHandle } from '@/components/cube/Cube3D';
 import type { Face, RGB } from '@/lib/color-utils';
-import { FACE_ORDER, rgbDistance, rotateGrid } from '@/lib/color-utils';
+import { FACE_ORDER, rgbDistance, rotateGrid, classifyStickerColor } from '@/lib/color-utils';
 import { buildFaceletsString, solveFacelets, validateFaceletCounts } from '@/lib/cube-solver';
 
 const FACE_META: { face: Face; title: string }[] = [
@@ -281,16 +281,8 @@ const Index: React.FC = () => {
                           face={face}
                           title={title}
                           onProcessed={(rgb, url) => {
-                            // Compute labels immediately using measured centers (when available) + reference palette.
-                            const centerEntries: [Face, RGB][] = FACE_ORDER.map((f) => [f, centers.get(f) ?? REF_COLORS[f]]);
-                            const newLabels = (rgb as RGB[]).map((c) => {
-                              let best: { d: number; face: Face } | null = null;
-                              for (const [label, ctr] of centerEntries) {
-                                const d = rgbDistance(c, ctr);
-                                if (!best || d < best.d) best = { d, face: label };
-                              }
-                              return best!.face;
-                            }) as Face[];
+                            // Use HSV-based classifier — robust to lighting/white-balance.
+                            const newLabels = (rgb as RGB[]).map((c) => classifyStickerColor(c)) as Face[];
                             setFaces((prev) => ({
                               ...prev,
                               [face]: { ...prev[face], rgb, imageUrl: url, rotation: 0, labels: newLabels },
