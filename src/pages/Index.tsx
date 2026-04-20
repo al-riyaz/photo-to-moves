@@ -104,11 +104,12 @@ const Index: React.FC = () => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const applyLabelsTo3D = async (silent = true): Promise<boolean> => {
+  const applyLabelsTo3D = useCallback(async (facesArg?: Record<Face, FaceState>, silent = true): Promise<boolean> => {
+    const src = facesArg ?? faces;
     await cube3dRef.current?.waitUntilIdle();
     // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
     const grids = FACE_ORDER.reduce((acc, f) => {
-      const labels = faces[f].labels;
+      const labels = src[f].labels;
       const filled = labels.filter(Boolean).length;
       if (filled === 0) {
         acc[f] = Array(9).fill(f) as Face[];
@@ -118,13 +119,23 @@ const Index: React.FC = () => {
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
-    setSolution(null);
-    setStepIdx(0);
     if (!silent) {
       toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
     }
     return true;
-  };
+  }, [faces]);
+
+  // Auto-sync 3D cube whenever labels change (covers uploads, edits, rotations, auto-assign).
+  const labelsKey = useMemo(
+    () => FACE_ORDER.map((f) => faces[f].labels.join('')).join('|'),
+    [faces]
+  );
+  useEffect(() => {
+    applyLabelsTo3D(faces, true);
+    setSolution(null);
+    setStepIdx(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labelsKey]);
 
   const buildAndSolve = async (sourceFromLabels?: boolean) => {
     try {
