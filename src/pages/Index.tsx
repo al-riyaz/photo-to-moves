@@ -105,10 +105,15 @@ const Index: React.FC = () => {
   const applyLabelsTo3D = useCallback(async (facesArg?: Record<Face, FaceState>, silent = true): Promise<boolean> => {
     const src = facesArg ?? faces;
     await cube3dRef.current?.waitUntilIdle();
-    // Start every face white; overlay only stickers the user has actually set.
+    // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
     const grids = FACE_ORDER.reduce((acc, f) => {
       const labels = src[f].labels;
-      acc[f] = labels.map((l) => (l || 'U')) as Face[];
+      const filled = labels.filter(Boolean).length;
+      if (filled === 0) {
+        acc[f] = Array(9).fill(f) as Face[];
+      } else {
+        acc[f] = labels.map((l) => (l || f)) as Face[];
+      }
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
