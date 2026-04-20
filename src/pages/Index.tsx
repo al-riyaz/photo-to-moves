@@ -214,7 +214,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
-      <main className="container py-10 space-y-8">
+      <main className="container max-w-6xl py-6 space-y-6">
         <header className="relative text-center space-y-3">
           <div className="absolute right-0 top-0">
             {user ? (
