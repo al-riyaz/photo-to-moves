@@ -306,10 +306,8 @@ const Index: React.FC = () => {
                               ...prev,
                               [face]: { ...prev[face], rgb, imageUrl: url, labels: [...emptyLabels] },
                             }));
-                            setTimeout(() => {
-                              autoAssignForFace(face);
-                              setTimeout(() => applyLabelsTo3D(), 0);
-                            }, 0);
+                            // auto-assign on next tick; the effect then syncs the 3D cube.
+                            setTimeout(() => autoAssignForFace(face), 0);
                           }}
                         />
                       ))}
