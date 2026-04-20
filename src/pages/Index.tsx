@@ -43,13 +43,6 @@ const Index: React.FC = () => {
   const [stepIdx, setStepIdx] = useState(0);
   const [scramble, setScramble] = useState<string[]>([]);
   const cube3dRef = useRef<Cube3DHandle | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
   const handleScramble = () => {
     const moves = generateScramble(20);
@@ -171,27 +164,10 @@ const Index: React.FC = () => {
       setStepIdx(0);
       toast({ title: 'Solution found', description: res });
 
-      if (user) {
-        const moveCount = res === 'Already solved' ? 0 : res.split(' ').filter(Boolean).length;
-        const { error } = await supabase.from('solves').insert({
-          user_id: user.id,
-          scramble: scrambleStr,
-          facelets,
-          solution: res,
-          move_count: moveCount,
-        });
-        if (error) console.error('Save solve failed', error);
-        else toast({ title: 'Saved', description: 'Solution saved to your history.' });
-      }
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Solve failed', description: e?.message || 'Unknown error' });
     }
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    toast({ title: 'Signed out' });
   };
 
   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
