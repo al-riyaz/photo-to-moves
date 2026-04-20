@@ -104,11 +104,12 @@ const Index: React.FC = () => {
     return FACE_ORDER.every((f) => faces[f].labels.filter(Boolean).length === 9);
   }, [faces]);
 
-  const applyLabelsTo3D = async (silent = true): Promise<boolean> => {
+  const applyLabelsTo3D = useCallback(async (facesArg?: Record<Face, FaceState>, silent = true): Promise<boolean> => {
+    const src = facesArg ?? faces;
     await cube3dRef.current?.waitUntilIdle();
     // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
     const grids = FACE_ORDER.reduce((acc, f) => {
-      const labels = faces[f].labels;
+      const labels = src[f].labels;
       const filled = labels.filter(Boolean).length;
       if (filled === 0) {
         acc[f] = Array(9).fill(f) as Face[];
@@ -118,13 +119,23 @@ const Index: React.FC = () => {
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
-    setSolution(null);
-    setStepIdx(0);
     if (!silent) {
       toast({ title: 'Cube updated', description: 'Painted 3D cube from your colors.' });
     }
     return true;
-  };
+  }, [faces]);
+
+  // Auto-sync 3D cube whenever labels change (covers uploads, edits, rotations, auto-assign).
+  const labelsKey = useMemo(
+    () => FACE_ORDER.map((f) => faces[f].labels.join('')).join('|'),
+    [faces]
+  );
+  useEffect(() => {
+    applyLabelsTo3D(faces, true);
+    setSolution(null);
+    setStepIdx(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labelsKey]);
 
   const buildAndSolve = async (sourceFromLabels?: boolean) => {
     try {
@@ -203,7 +214,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
-      <main className="container py-10 space-y-8">
+      <main className="container max-w-6xl py-6 space-y-6">
         <header className="relative text-center space-y-3">
           <div className="absolute right-0 top-0">
             {user ? (
@@ -230,18 +241,30 @@ const Index: React.FC = () => {
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-              <div className="grid sm:grid-cols-3 gap-3 text-sm w-full">
+              <div className="grid sm:grid-cols-3 gap-4 text-sm w-full">
                 <div>
-                  <p className="font-medium mb-0.5">1. Input your cube</p>
-                  <p className="text-muted-foreground">Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos, or <Palette className="inline h-3.5 w-3.5" /> to enter colors manually. The 3D cube updates live.</p>
+                  <p className="font-medium mb-1">1. Input your cube</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li>Click <Upload className="inline h-3.5 w-3.5" /> to upload 6 face photos (Top, Front, Right, Left, Back, Bottom).</li>
+                    <li>Or click <Palette className="inline h-3.5 w-3.5" /> and tap stickers to cycle colors manually.</li>
+                    <li>Use <strong>Rotate</strong> in a face if it's mis-oriented.</li>
+                  </ul>
                 </div>
                 <div>
-                  <p className="font-medium mb-0.5">2. Verify the 3D cube</p>
-                  <p className="text-muted-foreground">Drag to rotate. Use the view buttons (Front, Top, 3D…) to inspect every face matches your real cube.</p>
+                  <p className="font-medium mb-1">2. Verify the 3D cube</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li>The 3D cube updates live as you input colors.</li>
+                    <li>Drag to rotate, or use <strong>Front / Top / 3D…</strong> view buttons.</li>
+                    <li>Re-open <Palette className="inline h-3.5 w-3.5" /> to fix any wrong stickers.</li>
+                  </ul>
                 </div>
                 <div>
-                  <p className="font-medium mb-0.5">3. Solve</p>
-                  <p className="text-muted-foreground">Press <strong>Solve</strong> to compute the optimal sequence, then step through moves with Prev / Next.</p>
+                  <p className="font-medium mb-1">3. Scramble or Solve</p>
+                  <ul className="text-muted-foreground space-y-1 list-disc pl-4">
+                    <li><strong>Scramble</strong> randomizes the cube to practice.</li>
+                    <li><strong>Solve</strong> computes the optimal sequence (Kociemba).</li>
+                    <li>Use <strong>Prev / Next</strong> to step through moves on the 3D cube.</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -295,10 +318,8 @@ const Index: React.FC = () => {
                               ...prev,
                               [face]: { ...prev[face], rgb, imageUrl: url, labels: [...emptyLabels] },
                             }));
-                            setTimeout(() => {
-                              autoAssignForFace(face);
-                              setTimeout(() => applyLabelsTo3D(), 0);
-                            }, 0);
+                            // auto-assign on next tick; the effect then syncs the 3D cube.
+                            setTimeout(() => autoAssignForFace(face), 0);
                           }}
                         />
                       ))}
@@ -336,7 +357,6 @@ const Index: React.FC = () => {
                             cells={st.labels}
                             onChange={(cells) => {
                               setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: cells } }));
-                              setTimeout(() => applyLabelsTo3D(), 0);
                             }}
                             onRotate={() => {
                               setFaces((prev) => ({
@@ -350,7 +370,6 @@ const Index: React.FC = () => {
                                     : prev[face].labels) as (Face | '')[],
                                 },
                               }));
-                              setTimeout(() => applyLabelsTo3D(), 0);
                             }}
                           />
                         );
@@ -391,11 +410,11 @@ const Index: React.FC = () => {
                 })}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="hero" onClick={() => buildAndSolve(false)}>
-                  <Play className="h-4 w-4" /> Solve
-                </Button>
                 <Button variant="hero" onClick={handleScramble}>
                   <Shuffle className="h-4 w-4" /> Scramble
+                </Button>
+                <Button variant="hero" onClick={() => buildAndSolve(false)}>
+                  <Play className="h-4 w-4" /> Solve
                 </Button>
                 <Button
                   variant="ghost"
