@@ -51,6 +51,16 @@ const Index: React.FC = () => {
     toast({ title: 'Scrambling', description: moves.join(' ') });
   };
 
+  // Reference RGB colors for each face (matches Cube3D COLORS palette).
+  const REF_COLORS: Record<Face, RGB> = {
+    U: [255, 255, 255], // white
+    D: [255, 213, 0],   // yellow
+    F: [0, 155, 72],    // green
+    B: [0, 69, 173],    // blue
+    R: [183, 18, 52],   // red
+    L: [255, 88, 0],    // orange
+  };
+
   const centers = useMemo(() => {
     const map = new Map<Face, RGB>();
     for (const f of FACE_ORDER) {
@@ -63,14 +73,12 @@ const Index: React.FC = () => {
     return map;
   }, [faces]);
 
-  const canAutoMap = centers.size === 6;
-
   const autoAssignForFace = useCallback((face: Face) => {
-    if (!canAutoMap) return;
     const st = faces[face];
     if (st.rgb.length !== 9) return;
     const rotated = rotateGrid(st.rgb, st.rotation) as RGB[];
-    const centerEntries = Array.from(centers.entries());
+    // Prefer measured centers from already-uploaded faces; fall back to reference palette for any missing face.
+    const centerEntries: [Face, RGB][] = FACE_ORDER.map((f) => [f, centers.get(f) ?? REF_COLORS[f]]);
     const newLabels = rotated.map((c) => {
       let best: { d: number; face: Face } | null = null;
       for (const [label, ctr] of centerEntries) {
@@ -80,7 +88,7 @@ const Index: React.FC = () => {
       return best!.face;
     });
     setFaces((prev) => ({ ...prev, [face]: { ...prev[face], labels: newLabels as Face[] } }));
-  }, [canAutoMap, centers, faces]);
+  }, [centers, faces]);
 
   const facesFilled = useMemo(
     () => FACE_ORDER.filter((f) => faces[f].labels.filter(Boolean).length === 9).length,
@@ -97,15 +105,10 @@ const Index: React.FC = () => {
   const applyLabelsTo3D = useCallback(async (facesArg?: Record<Face, FaceState>, silent = true): Promise<boolean> => {
     const src = facesArg ?? faces;
     await cube3dRef.current?.waitUntilIdle();
-    // Paint partial faces too — fill missing stickers with the face center letter so the 3D cube reflects progress.
+    // Start every face white; overlay only stickers the user has actually set.
     const grids = FACE_ORDER.reduce((acc, f) => {
       const labels = src[f].labels;
-      const filled = labels.filter(Boolean).length;
-      if (filled === 0) {
-        acc[f] = Array(9).fill(f) as Face[];
-      } else {
-        acc[f] = labels.map((l) => (l || f)) as Face[];
-      }
+      acc[f] = labels.map((l) => (l || 'U')) as Face[];
       return acc;
     }, {} as Record<Face, Face[]>);
     cube3dRef.current?.paintFromFacelets(grids as any);
