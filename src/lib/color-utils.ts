@@ -51,10 +51,16 @@ export function classifyStickerColor(rgb: RGB): Face {
   // Very dark / unlit fallback — treat as closest by hue anyway
   // Yellow: ~40-70
   if (h >= 40 && h < 70) return 'D';
-  // Orange: ~10-40
-  if (h >= 10 && h < 40) return 'L';
-  // Red: 0-10 or 340-360
-  if (h < 10 || h >= 340) return 'R';
+  // Orange vs Red disambiguation (both live in low hues 0-40 / 340-360).
+  // Orange: brighter, more yellow-leaning hue (~18-40), high value.
+  // Red: deeper, lower hue (<18) or wrap-around (>=340), typically darker / more saturated.
+  if (h >= 18 && h < 40) return 'L'; // Orange
+  if ((h < 18 || h >= 340)) {
+    // Within the red/orange overlap zone (h 10-18), use brightness:
+    // bright + less saturated → orange; dark + saturated → red.
+    if (h >= 10 && h < 18 && v > 0.75 && s < 0.85) return 'L';
+    return 'R'; // Red
+  }
   // Green: 70-170
   if (h >= 70 && h < 170) return 'F';
   // Blue: 170-260
