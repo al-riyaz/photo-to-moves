@@ -451,6 +451,45 @@ const Index: React.FC = () => {
                 </div>
               </div>
             </div>
+            <div className="mt-4 pt-4 border-t">
+              <p className="font-medium text-sm mb-2">Move Notation</p>
+              <div className="grid sm:grid-cols-3 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <div>
+                  <p className="font-medium text-foreground mb-1">Faces (clockwise 90°)</p>
+                  <ul className="space-y-0.5">
+                    <li><code className="font-mono text-foreground">U</code> — Up (top face)</li>
+                    <li><code className="font-mono text-foreground">D</code> — Down (bottom face)</li>
+                    <li><code className="font-mono text-foreground">F</code> — Front face</li>
+                    <li><code className="font-mono text-foreground">B</code> — Back face</li>
+                    <li><code className="font-mono text-foreground">L</code> — Left face</li>
+                    <li><code className="font-mono text-foreground">R</code> — Right face</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Prime (counter-clockwise 90°)</p>
+                  <ul className="space-y-0.5">
+                    <li><code className="font-mono text-foreground">U'</code> — Up inverse</li>
+                    <li><code className="font-mono text-foreground">D'</code> — Down inverse</li>
+                    <li><code className="font-mono text-foreground">F'</code> — Front inverse</li>
+                    <li><code className="font-mono text-foreground">B'</code> — Back inverse</li>
+                    <li><code className="font-mono text-foreground">L'</code> — Left inverse</li>
+                    <li><code className="font-mono text-foreground">R'</code> — Right inverse</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">Double turn (180°)</p>
+                  <ul className="space-y-0.5">
+                    <li><code className="font-mono text-foreground">U2</code> — Up twice</li>
+                    <li><code className="font-mono text-foreground">D2</code> — Down twice</li>
+                    <li><code className="font-mono text-foreground">F2</code> — Front twice</li>
+                    <li><code className="font-mono text-foreground">B2</code> — Back twice</li>
+                    <li><code className="font-mono text-foreground">L2</code> — Left twice</li>
+                    <li><code className="font-mono text-foreground">R2</code> — Right twice</li>
+                  </ul>
+                  <p className="text-xs mt-2">The <code className="font-mono">2</code> suffix means rotate that face 180° (direction doesn't matter).</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>
