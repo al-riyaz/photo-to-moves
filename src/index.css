@@ -60,8 +60,8 @@ All colors MUST be HSL.
     /* Cube face colors */
     --cube-white: 0 0% 98%;
     --cube-yellow: 51 100% 50%;
-    --cube-red: 0 82% 55%;
-    --cube-orange: 24 95% 55%;
+    --cube-red: 0 85% 35%;
+    --cube-orange: 30 100% 65%;
     --cube-blue: 220 85% 55%;
     --cube-green: 140 65% 45%;
   }
