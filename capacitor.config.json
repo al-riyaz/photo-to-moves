@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.13ab927c370e4170b3e24bf89bb698d7",
+  "appName": "cubestimulator",
+  "webDir": "dist",
+  "server": {
+    "url": "https://13ab927c-370e-4170-b3e2-4bf89bb698d7.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
