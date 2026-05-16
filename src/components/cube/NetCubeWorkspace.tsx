@@ -26,7 +26,9 @@ export type NetCubeConfig = {
   /** Letter palette for the color-cycle and color-class swatches. */
   letters: FacelKey[];
   /** Tailwind background classes per letter, e.g. { U: 'cube-U', R: 'cube-R', ... } */
-  swatchClassMap: Record<FacelKey, string>;
+  swatchClassMap?: Record<FacelKey, string>;
+  /** Optional hex/HSL colors per letter for inline-style swatches (used when classMap entry is missing). */
+  swatchColorMap?: Record<FacelKey, string>;
   /** Notation legend rendered under the solution. */
   notation: React.ReactNode;
   /** Solver: receives grids keyed by face key, returns solution string (sync or async). */
@@ -175,18 +177,23 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                     face.renderCells(cells, (i) => cycle(face.key, i))
                   ) : (
                     <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-                      {cells.map((c, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => cycle(face.key, i)}
-                          className={cn(
-                            'aspect-square rounded-sm border focus:outline-none focus:ring-2 focus:ring-ring',
-                            c ? config.swatchClassMap[c] : 'bg-muted'
-                          )}
-                          title={c || 'Unset'}
-                        />
-                      ))}
+                      {cells.map((c, i) => {
+                        const cls = c && config.swatchClassMap?.[c];
+                        const inlineColor = c && !cls ? config.swatchColorMap?.[c] : undefined;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => cycle(face.key, i)}
+                            className={cn(
+                              'aspect-square rounded-sm border focus:outline-none focus:ring-2 focus:ring-ring',
+                              cls || (c ? '' : 'bg-muted')
+                            )}
+                            style={inlineColor ? { backgroundColor: inlineColor } : undefined}
+                            title={c || 'Unset'}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -205,12 +212,16 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            {config.letters.map((l) => (
-              <span key={l} className="inline-flex items-center gap-1">
-                <span className={cn('inline-block w-3 h-3 rounded-sm border', config.swatchClassMap[l])} />
-                {l}
-              </span>
-            ))}
+            {config.letters.map((l) => {
+              const cls = config.swatchClassMap?.[l];
+              const col = !cls ? config.swatchColorMap?.[l] : undefined;
+              return (
+                <span key={l} className="inline-flex items-center gap-1">
+                  <span className={cn('inline-block w-3 h-3 rounded-sm border', cls)} style={col ? { backgroundColor: col } : undefined} />
+                  {l}
+                </span>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
