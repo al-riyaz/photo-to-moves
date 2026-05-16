@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -6,6 +6,7 @@ import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box } from 'lu
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
+import { applyPuzzleMove, invertPuzzleMove, isExecutablePuzzleMove, tokenizeMoves } from '@/lib/puzzle-moves';
 
 export type FacelKey = string;
 
@@ -58,47 +59,6 @@ function sampleGridAverages(img: HTMLImageElement, cols: number, rows: number): 
       out.push(averageColor(ctx.getImageData(x, y, sw, sh).data));
     }
   }
-  return out;
-}
-
-/** Invert a single move token (notation-aware). */
-function invertMove(m: string): string {
-  if (m.endsWith('++')) return m.slice(0, -2) + '--';
-  if (m.endsWith('--')) return m.slice(0, -2) + '++';
-  if (m.endsWith('2')) return m;
-  if (m.endsWith("'")) return m.slice(0, -1);
-  return m + "'";
-}
-
-/**
- * Shuffle stickers across the entire puzzle, keeping each face's center
- * sticker pinned (so the cube remains identifiable) and preserving the total
- * count of each color. This guarantees a visible scramble even when the
- * puzzle starts in a fully solved state.
- */
-function shuffleGrids(grids: Record<FacelKey, string[]>): Record<FacelKey, string[]> {
-  const keys = Object.keys(grids);
-  // Collect all stickers with their (face, index) origin, skipping centers.
-  const positions: { face: string; idx: number }[] = [];
-  const pool: string[] = [];
-  const out: Record<FacelKey, string[]> = {};
-  for (const k of keys) {
-    out[k] = [...grids[k]];
-    const len = grids[k].length;
-    // Heuristic center index: middle of an odd-length face (e.g. 9 → 4, 11 → 5).
-    const centerIdx = len % 2 === 1 ? Math.floor(len / 2) : -1;
-    for (let i = 0; i < len; i++) {
-      if (i === centerIdx) continue;
-      positions.push({ face: k, idx: i });
-      pool.push(grids[k][i]);
-    }
-  }
-  // Fisher–Yates on the pool.
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  positions.forEach((p, i) => { out[p.face][p.idx] = pool[i]; });
   return out;
 }
 
