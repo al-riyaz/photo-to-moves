@@ -1,6 +1,8 @@
 import React from 'react';
 import NetCubeWorkspace, { type NetCubeConfig } from '@/components/cube/NetCubeWorkspace';
 import { solvePyraminx, validatePyraminxGrids } from '@/lib/solvers/solverPyraminx';
+import { scramblePyraminx } from '@/lib/scramblers';
+import Puzzle3D from '@/components/cube/Puzzle3D';
 
 const SWATCH: Record<string, string> = {
   U: 'cube-U', L: 'cube-L', R: 'cube-R', B: 'cube-B',
@@ -19,6 +21,8 @@ const config: NetCubeConfig = {
   ],
   validate: (g) => validatePyraminxGrids(g as any),
   solve: (g) => solvePyraminx(g as any),
+  scramble: () => scramblePyraminx(),
+  render3D: (g) => <Puzzle3D kind={{ type: 'tetra' }} grids={g} colorMap={{ U: '#ffffff', L: '#ff5800', R: '#b71234', B: '#009b48' }} />,
   notation: (
     <div className="text-xs text-muted-foreground space-y-1">
       <p><span className="font-medium text-foreground">U / L / R / B</span> — turn an entire face (including the tip) 120° clockwise.</p>
