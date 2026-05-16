@@ -37,7 +37,9 @@ const makeEmptyFaces = (): Record<Face, FaceState> => ({
   B: { rgb: [], labels: [...emptyLabels], rotation: 0 },
 });
 
-const Index: React.FC = () => {
+type Props = { variant?: 'classic' | 'mirror' };
+
+const ThreeByThreeWorkspace: React.FC<Props> = ({ variant = 'classic' }) => {
   const [faces, setFaces] = useState<Record<Face, FaceState>>(makeEmptyFaces);
   const [solution, setSolution] = useState<string | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -194,16 +196,15 @@ const Index: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
-      <main className="container max-w-6xl py-6 space-y-6">
-        <header className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Scramble, upload photos, or enter colors — then watch the optimal solution play out in 3D.
-          </p>
-        </header>
-
-        <section className="grid lg:grid-cols-5 gap-6">
+    <div onMouseMove={onMouseMove} className="space-y-6">
+      {variant === 'mirror' && (
+        <Card className="bg-card/60">
+          <CardContent className="py-3 text-sm text-muted-foreground">
+            Mirror cube uses the same mechanics as a 3x3 — stickers represent cubie shapes (U/R/F/D/L/B = top, right, front, bottom, left, back). Enter the shape of each face to compute the solution.
+          </CardContent>
+        </Card>
+      )}
+      <section className="grid lg:grid-cols-5 gap-6">
           {/* Big 3D cube */}
           <Card className="lg:col-span-3 tilt-on-hover">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
