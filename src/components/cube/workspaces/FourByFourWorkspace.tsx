@@ -1,6 +1,8 @@
 import React from 'react';
 import NetCubeWorkspace, { type NetCubeConfig } from '@/components/cube/NetCubeWorkspace';
 import { solve4x4, validate4x4Grids } from '@/lib/solvers/solver4x4';
+import { scramble4x4 } from '@/lib/scramblers';
+import Puzzle3D from '@/components/cube/Puzzle3D';
 
 const SWATCH: Record<string, string> = {
   U: 'cube-U', R: 'cube-R', F: 'cube-F', D: 'cube-D', L: 'cube-L', B: 'cube-B',
@@ -21,6 +23,8 @@ const config: NetCubeConfig = {
   ],
   validate: (g) => validate4x4Grids(g as any),
   solve: (g) => solve4x4(g as any),
+  scramble: () => scramble4x4(),
+  render3D: (g) => <Puzzle3D kind={{ type: 'cube', n: 4 }} grids={g} />,
   notation: (
     <div className="text-xs text-muted-foreground space-y-1">
       <p><span className="font-medium text-foreground">U / R / F / D / L / B</span> — outer face turns (same as 3x3).</p>
