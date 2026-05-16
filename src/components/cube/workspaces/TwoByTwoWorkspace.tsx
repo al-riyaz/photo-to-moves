@@ -1,6 +1,8 @@
 import React from 'react';
 import NetCubeWorkspace, { type NetCubeConfig } from '@/components/cube/NetCubeWorkspace';
 import { solve2x2, validate2x2Grids } from '@/lib/solvers/solver2x2';
+import { scramble2x2 } from '@/lib/scramblers';
+import Puzzle3D from '@/components/cube/Puzzle3D';
 
 const SWATCH: Record<string, string> = {
   U: 'cube-U', R: 'cube-R', F: 'cube-F', D: 'cube-D', L: 'cube-L', B: 'cube-B',
@@ -21,6 +23,8 @@ const config: NetCubeConfig = {
   ],
   validate: (g) => validate2x2Grids(g as any),
   solve: (g) => solve2x2(g as any),
+  scramble: () => scramble2x2(),
+  render3D: (g) => <Puzzle3D kind={{ type: 'cube', n: 2 }} grids={g} />,
   notation: (
     <div className="grid sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
       <div><span className="font-medium text-foreground">Faces:</span> U, D, F, B, L, R (90° clockwise)</div>
