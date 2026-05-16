@@ -181,7 +181,9 @@ function applyPyraminxMove(grids: PuzzleGrids, move: string): PuzzleGrids {
   const tipOnly = move[0] === move[0].toLowerCase();
   if (tipOnly) {
     const tipMap: Record<string, number[]> = { U: [0, 1, 3], L: [0, 2, 6], R: [2, 5, 8], B: [6, 7, 8] };
-    cycleChunks(out, [[face, tipMap[face]]], prime);
+    const idx = tipMap[face];
+    const vals = idx.map((i) => out[face][i]);
+    idx.forEach((cell, i) => { out[face][cell] = vals[prime ? (i + 1) % idx.length : (i - 1 + idx.length) % idx.length]; });
     return out;
   }
   out[face] = rotateGrid3(out[face], prime);
