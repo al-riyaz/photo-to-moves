@@ -24,7 +24,7 @@ const config: NetCubeConfig = {
   validate: (g) => validate2x2Grids(g as any),
   solve: (g) => solve2x2(g as any),
   scramble: () => scramble2x2(),
-  render3D: (g) => <Puzzle3D kind={{ type: 'cube', n: 2 }} grids={g} />,
+  render3D: (g, cam) => <Puzzle3D kind={{ type: 'cube', n: 2 }} grids={g} camera={cam} />,
   notation: (
     <div className="grid sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
       <div><span className="font-medium text-foreground">Faces:</span> U, D, F, B, L, R (90° clockwise)</div>
