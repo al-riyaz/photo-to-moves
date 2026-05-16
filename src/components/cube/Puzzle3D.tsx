@@ -12,6 +12,13 @@ const DEFAULT_COLOR_MAP: Record<string, string> = {
 
 type Grids = Record<string, string[]>;
 
+function visibleFaceColor(faceKey: string, cells: string[] | undefined, colorMap: Record<string, string>, centerIndex: number) {
+  if (!cells?.length) return INNER;
+  const center = cells[centerIndex] ?? cells[0] ?? faceKey;
+  const movedSticker = cells.find((c, i) => i !== centerIndex && c && c !== center);
+  return colorMap[movedSticker || center] || INNER;
+}
+
 // ───────────────────────────── NxNxN viewer ─────────────────────────────
 // For 2x2 / 4x4. Face sticker order matches NetCubeWorkspace row-major sampling:
 // rows top→bottom, cols left→right, viewed from outside the puzzle.
@@ -83,7 +90,7 @@ function Tetrahedron({ grids, colorMap }: { grids: Grids; colorMap: Record<strin
     <group scale={1.4}>
       {facesDef.map((f) => {
         const g = grids[f.key];
-        const centerColor = g ? (colorMap[g[4]] || colorMap[g[0]] || INNER) : INNER;
+        const centerColor = visibleFaceColor(f.key, g, colorMap, 4);
         const positions = new Float32Array([
           v[f.idx[0]].x, v[f.idx[0]].y, v[f.idx[0]].z,
           v[f.idx[1]].x, v[f.idx[1]].y, v[f.idx[1]].z,
@@ -147,7 +154,7 @@ function Dodecahedron({ grids, colorMap, faceOrder }: {
     <group>
       {faces.map((f, i) => {
         const g = grids[f.faceKey];
-        const color = g ? (colorMap[g[0]] || INNER) : INNER;
+        const color = visibleFaceColor(f.faceKey, g, colorMap, 0);
         return (
           <mesh key={i} geometry={f.geom}>
             <meshStandardMaterial color={color} />
