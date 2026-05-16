@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Palette, Play, RotateCcw } from 'lucide-react';
+import { Upload, Palette, Play, RotateCcw, Shuffle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
@@ -37,6 +37,10 @@ export type NetCubeConfig = {
   validate?: (grids: Record<FacelKey, string[]>) => { ok: boolean; message?: string };
   /** Optional notice rendered at the top of the workspace. */
   notice?: React.ReactNode;
+  /** Optional scramble generator — returns a notation string to display. */
+  scramble?: () => string;
+  /** Optional 3D renderer for the current grids. */
+  render3D?: (grids: Record<FacelKey, string[]>) => React.ReactNode;
 };
 
 function sampleGridAverages(img: HTMLImageElement, cols: number, rows: number): RGB[] {
@@ -75,6 +79,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [previews, setPreviews] = useState<Record<FacelKey, string | undefined>>({});
   const [solution, setSolution] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
+  const [scramble, setScramble] = useState<string | null>(null);
 
   const cycle = (faceKey: FacelKey, idx: number) => {
     setGrids((prev) => {
@@ -117,6 +122,13 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   };
 
   const resetAll = () => { setGrids(initGrids); setPreviews({}); setSolution(null); };
+
+  const doScramble = () => {
+    if (!config.scramble) return;
+    const s = config.scramble();
+    setScramble(s);
+    toast({ title: 'Scramble generated', description: 'Apply this sequence to your puzzle, then upload faces.' });
+  };
 
   const doSolve = async () => {
     try {
@@ -205,6 +217,11 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             <Button variant="hero" onClick={doSolve} disabled={solving}>
               <Play className="h-4 w-4" /> {solving ? 'Solving...' : 'Solve'}
             </Button>
+            {config.scramble && (
+              <Button variant="outline" onClick={doScramble}>
+                <Shuffle className="h-4 w-4" /> Scramble
+              </Button>
+            )}
             <Button variant="ghost" onClick={resetAll}>Reset all</Button>
             <span className="text-xs text-muted-foreground inline-flex items-center gap-2 ml-auto">
               <Palette className="h-3.5 w-3.5" /> Click stickers to cycle colors
@@ -225,6 +242,28 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
           </div>
         </CardContent>
       </Card>
+
+      {config.render3D && (
+        <Card>
+          <CardHeader>
+            <CardTitle>3D View</CardTitle>
+            <CardDescription>Drag to rotate. Reflects your current sticker colors.</CardDescription>
+          </CardHeader>
+          <CardContent>{config.render3D(grids)}</CardContent>
+        </Card>
+      )}
+
+      {scramble && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Scramble</CardTitle>
+            <CardDescription>Apply this sequence to your puzzle.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <pre className="text-sm font-mono whitespace-pre-wrap break-words p-3 rounded-md border bg-muted/40">{scramble}</pre>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
