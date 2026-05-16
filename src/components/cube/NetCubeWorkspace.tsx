@@ -70,17 +70,35 @@ function invertMove(m: string): string {
   return m + "'";
 }
 
-/** Shuffle stickers within each face (preserves per-face color counts). */
+/**
+ * Shuffle stickers across the entire puzzle, keeping each face's center
+ * sticker pinned (so the cube remains identifiable) and preserving the total
+ * count of each color. This guarantees a visible scramble even when the
+ * puzzle starts in a fully solved state.
+ */
 function shuffleGrids(grids: Record<FacelKey, string[]>): Record<FacelKey, string[]> {
+  const keys = Object.keys(grids);
+  // Collect all stickers with their (face, index) origin, skipping centers.
+  const positions: { face: string; idx: number }[] = [];
+  const pool: string[] = [];
   const out: Record<FacelKey, string[]> = {};
-  for (const k of Object.keys(grids)) {
-    const arr = [...grids[k]];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+  for (const k of keys) {
+    out[k] = [...grids[k]];
+    const len = grids[k].length;
+    // Heuristic center index: middle of an odd-length face (e.g. 9 → 4, 11 → 5).
+    const centerIdx = len % 2 === 1 ? Math.floor(len / 2) : -1;
+    for (let i = 0; i < len; i++) {
+      if (i === centerIdx) continue;
+      positions.push({ face: k, idx: i });
+      pool.push(grids[k][i]);
     }
-    out[k] = arr;
   }
+  // Fisher–Yates on the pool.
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  positions.forEach((p, i) => { out[p.face][p.idx] = pool[i]; });
   return out;
 }
 
