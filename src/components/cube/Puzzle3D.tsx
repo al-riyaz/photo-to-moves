@@ -174,9 +174,11 @@ type Props = {
 export const Puzzle3D: React.FC<Props> = ({ kind, grids, colorMap, camera }) => {
   const cm = { ...DEFAULT_COLOR_MAP, ...(colorMap || {}) };
   const cam: [number, number, number] = camera || (kind.type === 'cube' ? [kind.n + 2, kind.n + 2, kind.n + 3] : [4, 4, 5]);
+  // Remount Canvas when camera changes so OrbitControls re-anchors to the new view.
+  const camKey = cam.join(',');
   return (
     <div className="w-full aspect-square rounded-md border bg-card overflow-hidden">
-      <Canvas camera={{ position: cam, fov: 40 }}>
+      <Canvas key={camKey} camera={{ position: cam, fov: 40 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 8, 5]} intensity={0.8} />
         <directionalLight position={[-5, -3, -5]} intensity={0.3} />
