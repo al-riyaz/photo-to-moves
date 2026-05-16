@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2 } from 'lucide-react';
+import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
@@ -29,7 +29,10 @@ export type NetCubeConfig = {
   validate?: (grids: Record<FacelKey, string[]>) => { ok: boolean; message?: string };
   notice?: React.ReactNode;
   scramble?: () => string;
-  render3D?: (grids: Record<FacelKey, string[]>) => React.ReactNode;
+  /** Optional 3D renderer. Receives a `camera` position to use for view perspectives. */
+  render3D?: (grids: Record<FacelKey, string[]>, camera?: [number, number, number]) => React.ReactNode;
+  /** Set to true to hide perspective view buttons (e.g. for non-cube shapes). */
+  hidePerspectives?: boolean;
 };
 
 function sampleGridAverages(img: HTMLImageElement, cols: number, rows: number): RGB[] {
@@ -58,6 +61,29 @@ function sampleGridAverages(img: HTMLImageElement, cols: number, rows: number): 
   return out;
 }
 
+/** Invert a single move token (notation-aware). */
+function invertMove(m: string): string {
+  if (m.endsWith('++')) return m.slice(0, -2) + '--';
+  if (m.endsWith('--')) return m.slice(0, -2) + '++';
+  if (m.endsWith('2')) return m;
+  if (m.endsWith("'")) return m.slice(0, -1);
+  return m + "'";
+}
+
+/** Shuffle stickers within each face (preserves per-face color counts). */
+function shuffleGrids(grids: Record<FacelKey, string[]>): Record<FacelKey, string[]> {
+  const out: Record<FacelKey, string[]> = {};
+  for (const k of Object.keys(grids)) {
+    const arr = [...grids[k]];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    out[k] = arr;
+  }
+  return out;
+}
+
 /** Default solved-state grid: every sticker = face letter (or first letter if face key isn't a letter). */
 function makeSolvedGrids(config: NetCubeConfig): Record<FacelKey, string[]> {
   const g: Record<FacelKey, string[]> = {};
@@ -68,6 +94,16 @@ function makeSolvedGrids(config: NetCubeConfig): Record<FacelKey, string[]> {
   return g;
 }
 
+const PERSPECTIVES: { id: 'F' | 'B' | 'U' | 'D' | 'L' | 'R' | 'ISO'; label: string; cam: [number, number, number] }[] = [
+  { id: 'F', label: 'Front', cam: [0, 0, 7] },
+  { id: 'B', label: 'Back', cam: [0, 0, -7] },
+  { id: 'U', label: 'Top', cam: [0, 7, 0.01] },
+  { id: 'D', label: 'Bottom', cam: [0, -7, 0.01] },
+  { id: 'L', label: 'Left', cam: [-7, 0, 0] },
+  { id: 'R', label: 'Right', cam: [7, 0, 0] },
+  { id: 'ISO', label: '3D', cam: [5, 5, 6] },
+];
+
 export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }) => {
   // Start in solved state so the 3D view renders fully colored by default (like 3x3).
   const solvedGrids = useMemo(() => makeSolvedGrids(config), [config]);
@@ -76,6 +112,9 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [solution, setSolution] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
   const [scramble, setScramble] = useState<string | null>(null);
+  const [scrambledViaApp, setScrambledViaApp] = useState(false);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [camera, setCamera] = useState<[number, number, number] | undefined>(undefined);
 
   const cycle = (faceKey: FacelKey, idx: number) => {
     setGrids((prev) => {
@@ -90,6 +129,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       return next;
     });
     setSolution(null);
+    setScrambledViaApp(false);
   };
 
   const handleFile = (face: NetCubeFaceConfig, file: File) => {
@@ -106,6 +146,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       });
       setGrids((prev) => ({ ...prev, [face.key]: labels }));
       setSolution(null);
+      setScrambledViaApp(false);
     };
     img.src = url;
   };
@@ -121,17 +162,35 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     setPreviews({});
     setSolution(null);
     setScramble(null);
+    setScrambledViaApp(false);
+    setStepIdx(0);
   };
 
   const doScramble = () => {
     if (!config.scramble) return;
     const s = config.scramble();
     setScramble(s);
-    toast({ title: 'Scramble generated', description: 'Apply this sequence to your puzzle, then upload faces.' });
+    // Visually scramble the 3D state by shuffling stickers within each face.
+    setGrids((prev) => shuffleGrids(prev));
+    setScrambledViaApp(true);
+    setSolution(null);
+    setStepIdx(0);
+    toast({ title: 'Scrambled', description: s.length > 80 ? s.slice(0, 80) + '…' : s });
   };
 
   const doSolve = async () => {
     try {
+      // If user scrambled via the app, the solution is simply the scramble inverted.
+      if (scrambledViaApp && scramble) {
+        const tokens = scramble.split(/\s+/).filter(Boolean);
+        const inv = tokens.slice().reverse().map(invertMove).join(' ');
+        setSolution(inv);
+        setStepIdx(0);
+        // Restore solved 3D state — we can't animate per-move on these puzzles,
+        // but the move list is steppable via Prev/Next.
+        setGrids(makeSolvedGrids(config));
+        return;
+      }
       if (config.validate) {
         const v = config.validate(grids);
         if (!v.ok) { toast({ title: 'Invalid cube state', description: v.message }); return; }
@@ -140,6 +199,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       toast({ title: 'Solving...', description: `Computing solution for ${config.title}` });
       const res = await config.solve(grids);
       setSolution(res || 'Already solved');
+      setStepIdx(0);
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Solve failed', description: e?.message || 'Unknown error' });
@@ -177,6 +237,11 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       </div>
     );
   };
+
+  const moves = useMemo(
+    () => (solution ? solution.split(/\s+/).filter(Boolean) : []),
+    [solution]
+  );
 
   return (
     <div className="space-y-6">
@@ -292,10 +357,20 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="mx-auto w-full max-w-xl">
-              {config.render3D ? config.render3D(grids) : (
+              {config.render3D ? config.render3D(grids, camera) : (
                 <p className="text-sm text-muted-foreground text-center py-12">3D view unavailable for this puzzle.</p>
               )}
             </div>
+            {!config.hidePerspectives && config.render3D && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {PERSPECTIVES.map((p) => (
+                  <Button key={p.id} variant="outline" size="sm" onClick={() => setCamera(p.cam)}>
+                    {p.id === 'ISO' && <Box className="h-4 w-4" />}
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
                 <Button variant="hero" onClick={doScramble}>
@@ -320,7 +395,31 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             <CardDescription>Solver output and notation legend.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {solution ? (
+            {solution && moves.length > 0 ? (
+              <div className="space-y-3">
+                <div className="text-base font-mono break-words flex flex-wrap gap-1 max-h-72 overflow-y-auto p-2 rounded-md border bg-muted/40">
+                  {moves.map((m, i) => (
+                    <span
+                      key={i}
+                      className={`px-1.5 py-0.5 rounded ${i === stepIdx ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button variant="secondary" onClick={() => setStepIdx((i) => Math.max(0, i - 1))} disabled={stepIdx <= 0}>
+                    Prev
+                  </Button>
+                  <Button onClick={() => setStepIdx((i) => Math.min(moves.length - 1, i + 1))} disabled={stepIdx >= moves.length - 1}>
+                    Next
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Step {Math.min(stepIdx + 1, moves.length)} / {moves.length}
+                  </span>
+                </div>
+              </div>
+            ) : solution ? (
               <pre className="text-sm font-mono whitespace-pre-wrap break-words p-3 rounded-md border bg-muted/40 max-h-96 overflow-y-auto">{solution}</pre>
             ) : (
               <p className="text-muted-foreground text-sm">Scramble, upload face photos, or edit colors — then click Solve.</p>
