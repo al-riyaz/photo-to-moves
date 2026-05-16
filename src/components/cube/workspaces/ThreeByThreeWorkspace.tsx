@@ -493,9 +493,8 @@ const ThreeByThreeWorkspace: React.FC<Props> = ({ variant = 'classic' }) => {
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 };
 
-export default Index;
+export default ThreeByThreeWorkspace;
