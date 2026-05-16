@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -6,6 +6,7 @@ import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box } from 'lu
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
+import { applyPuzzleMove, invertPuzzleMove, isExecutablePuzzleMove, tokenizeMoves } from '@/lib/puzzle-moves';
 
 export type FacelKey = string;
 
@@ -61,47 +62,6 @@ function sampleGridAverages(img: HTMLImageElement, cols: number, rows: number): 
   return out;
 }
 
-/** Invert a single move token (notation-aware). */
-function invertMove(m: string): string {
-  if (m.endsWith('++')) return m.slice(0, -2) + '--';
-  if (m.endsWith('--')) return m.slice(0, -2) + '++';
-  if (m.endsWith('2')) return m;
-  if (m.endsWith("'")) return m.slice(0, -1);
-  return m + "'";
-}
-
-/**
- * Shuffle stickers across the entire puzzle, keeping each face's center
- * sticker pinned (so the cube remains identifiable) and preserving the total
- * count of each color. This guarantees a visible scramble even when the
- * puzzle starts in a fully solved state.
- */
-function shuffleGrids(grids: Record<FacelKey, string[]>): Record<FacelKey, string[]> {
-  const keys = Object.keys(grids);
-  // Collect all stickers with their (face, index) origin, skipping centers.
-  const positions: { face: string; idx: number }[] = [];
-  const pool: string[] = [];
-  const out: Record<FacelKey, string[]> = {};
-  for (const k of keys) {
-    out[k] = [...grids[k]];
-    const len = grids[k].length;
-    // Heuristic center index: middle of an odd-length face (e.g. 9 → 4, 11 → 5).
-    const centerIdx = len % 2 === 1 ? Math.floor(len / 2) : -1;
-    for (let i = 0; i < len; i++) {
-      if (i === centerIdx) continue;
-      positions.push({ face: k, idx: i });
-      pool.push(grids[k][i]);
-    }
-  }
-  // Fisher–Yates on the pool.
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  positions.forEach((p, i) => { out[p.face][p.idx] = pool[i]; });
-  return out;
-}
-
 /** Default solved-state grid: every sticker = face letter (or first letter if face key isn't a letter). */
 function makeSolvedGrids(config: NetCubeConfig): Record<FacelKey, string[]> {
   const g: Record<FacelKey, string[]> = {};
@@ -133,8 +93,36 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [scrambledViaApp, setScrambledViaApp] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
   const [camera, setCamera] = useState<[number, number, number] | undefined>(undefined);
+  const [animating, setAnimating] = useState(false);
+  const animationIdRef = useRef(0);
+  const animatingRef = useRef(false);
+
+  const cancelAnimation = () => {
+    animationIdRef.current += 1;
+    animatingRef.current = false;
+    setAnimating(false);
+  };
+
+  const playMoveSequence = async (tokens: string[]) => {
+    const id = animationIdRef.current + 1;
+    animationIdRef.current = id;
+    animatingRef.current = true;
+    setAnimating(true);
+    for (const move of tokens) {
+      if (animationIdRef.current !== id) return;
+      setGrids((prev) => isExecutablePuzzleMove(prev, move) ? applyPuzzleMove(prev, move) : prev);
+      await new Promise((resolve) => setTimeout(resolve, 240));
+    }
+    if (animationIdRef.current === id) {
+      animatingRef.current = false;
+      setAnimating(false);
+    }
+  };
+
+  useEffect(() => () => cancelAnimation(), []);
 
   const cycle = (faceKey: FacelKey, idx: number) => {
+    cancelAnimation();
     setGrids((prev) => {
       const next = { ...prev, [faceKey]: [...prev[faceKey]] };
       const cur = next[faceKey][idx];
@@ -148,6 +136,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     });
     setSolution(null);
     setScrambledViaApp(false);
+    setStepIdx(0);
   };
 
   const handleFile = (face: NetCubeFaceConfig, file: File) => {
@@ -155,6 +144,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     setPreviews((p) => ({ ...p, [face.key]: url }));
     const img = new Image();
     img.onload = () => {
+      cancelAnimation();
       const cols = face.gridCols ?? Math.round(Math.sqrt(face.stickerCount));
       const rows = Math.ceil(face.stickerCount / cols);
       const rgbs = sampleGridAverages(img, cols, rows).slice(0, face.stickerCount);
@@ -165,17 +155,22 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       setGrids((prev) => ({ ...prev, [face.key]: labels }));
       setSolution(null);
       setScrambledViaApp(false);
+      setStepIdx(0);
     };
     img.src = url;
   };
 
   const resetFace = (faceKey: FacelKey) => {
+    cancelAnimation();
     setGrids((prev) => ({ ...prev, [faceKey]: Array(prev[faceKey].length).fill('') }));
     setPreviews((p) => ({ ...p, [faceKey]: undefined }));
     setSolution(null);
+    setScrambledViaApp(false);
+    setStepIdx(0);
   };
 
   const resetAll = () => {
+    cancelAnimation();
     setGrids(makeSolvedGrids(config));
     setPreviews({});
     setSolution(null);
@@ -186,27 +181,29 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doScramble = () => {
     if (!config.scramble) return;
+    cancelAnimation();
     const s = config.scramble();
+    const tokens = tokenizeMoves(s);
     setScramble(s);
-    // Visually scramble the 3D state by shuffling stickers within each face.
-    setGrids((prev) => shuffleGrids(prev));
     setScrambledViaApp(true);
     setSolution(null);
     setStepIdx(0);
     toast({ title: 'Scrambled', description: s.length > 80 ? s.slice(0, 80) + '…' : s });
+    void playMoveSequence(tokens);
   };
 
   const doSolve = async () => {
     try {
+      if (animatingRef.current) {
+        toast({ title: 'Please wait', description: 'Let the current move animation finish first.' });
+        return;
+      }
       // If user scrambled via the app, the solution is simply the scramble inverted.
       if (scrambledViaApp && scramble) {
-        const tokens = scramble.split(/\s+/).filter(Boolean);
-        const inv = tokens.slice().reverse().map(invertMove).join(' ');
+        const tokens = tokenizeMoves(scramble);
+        const inv = tokens.slice().reverse().map(invertPuzzleMove).join(' ');
         setSolution(inv);
         setStepIdx(0);
-        // Restore solved 3D state — we can't animate per-move on these puzzles,
-        // but the move list is steppable via Prev/Next.
-        setGrids(makeSolvedGrids(config));
         return;
       }
       if (config.validate) {
@@ -257,9 +254,23 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   };
 
   const moves = useMemo(
-    () => (solution ? solution.split(/\s+/).filter(Boolean) : []),
-    [solution]
+    () => (solution ? tokenizeMoves(solution).filter((m) => isExecutablePuzzleMove(grids, m)) : []),
+    [solution, grids]
   );
+
+  const goPrevStep = () => {
+    if (stepIdx <= 0 || animatingRef.current) return;
+    const prevMove = moves[stepIdx - 1];
+    setGrids((prev) => applyPuzzleMove(prev, invertPuzzleMove(prevMove)));
+    setStepIdx((i) => Math.max(0, i - 1));
+  };
+
+  const goNextStep = () => {
+    if (stepIdx >= moves.length || animatingRef.current) return;
+    const nextMove = moves[stepIdx];
+    setGrids((prev) => applyPuzzleMove(prev, nextMove));
+    setStepIdx((i) => Math.min(moves.length, i + 1));
+  };
 
   return (
     <div className="space-y-6">
@@ -391,12 +402,12 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
-                <Button variant="hero" onClick={doScramble}>
+                <Button variant="hero" onClick={doScramble} disabled={animating}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
               )}
-              <Button variant="hero" onClick={doSolve} disabled={solving}>
-                <Play className="h-4 w-4" /> {solving ? 'Solving...' : 'Solve'}
+              <Button variant="hero" onClick={doSolve} disabled={solving || animating}>
+                <Play className="h-4 w-4" /> {solving ? 'Solving...' : animating ? 'Moving...' : 'Solve'}
               </Button>
               <Button variant="ghost" onClick={resetAll}>Reset</Button>
               {scramble && (
@@ -426,10 +437,10 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button variant="secondary" onClick={() => setStepIdx((i) => Math.max(0, i - 1))} disabled={stepIdx <= 0}>
+                  <Button variant="secondary" onClick={goPrevStep} disabled={stepIdx <= 0 || animating}>
                     Prev
                   </Button>
-                  <Button onClick={() => setStepIdx((i) => Math.min(moves.length - 1, i + 1))} disabled={stepIdx >= moves.length - 1}>
+                  <Button onClick={goNextStep} disabled={stepIdx >= moves.length || animating}>
                     Next
                   </Button>
                   <span className="text-sm text-muted-foreground">
