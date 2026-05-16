@@ -93,8 +93,36 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [scrambledViaApp, setScrambledViaApp] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
   const [camera, setCamera] = useState<[number, number, number] | undefined>(undefined);
+  const [animating, setAnimating] = useState(false);
+  const animationIdRef = useRef(0);
+  const animatingRef = useRef(false);
+
+  const cancelAnimation = () => {
+    animationIdRef.current += 1;
+    animatingRef.current = false;
+    setAnimating(false);
+  };
+
+  const playMoveSequence = async (tokens: string[]) => {
+    const id = animationIdRef.current + 1;
+    animationIdRef.current = id;
+    animatingRef.current = true;
+    setAnimating(true);
+    for (const move of tokens) {
+      if (animationIdRef.current !== id) return;
+      setGrids((prev) => isExecutablePuzzleMove(prev, move) ? applyPuzzleMove(prev, move) : prev);
+      await new Promise((resolve) => setTimeout(resolve, 240));
+    }
+    if (animationIdRef.current === id) {
+      animatingRef.current = false;
+      setAnimating(false);
+    }
+  };
+
+  useEffect(() => () => cancelAnimation(), []);
 
   const cycle = (faceKey: FacelKey, idx: number) => {
+    cancelAnimation();
     setGrids((prev) => {
       const next = { ...prev, [faceKey]: [...prev[faceKey]] };
       const cur = next[faceKey][idx];
@@ -108,6 +136,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     });
     setSolution(null);
     setScrambledViaApp(false);
+    setStepIdx(0);
   };
 
   const handleFile = (face: NetCubeFaceConfig, file: File) => {
@@ -115,6 +144,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     setPreviews((p) => ({ ...p, [face.key]: url }));
     const img = new Image();
     img.onload = () => {
+      cancelAnimation();
       const cols = face.gridCols ?? Math.round(Math.sqrt(face.stickerCount));
       const rows = Math.ceil(face.stickerCount / cols);
       const rgbs = sampleGridAverages(img, cols, rows).slice(0, face.stickerCount);
@@ -125,17 +155,22 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
       setGrids((prev) => ({ ...prev, [face.key]: labels }));
       setSolution(null);
       setScrambledViaApp(false);
+      setStepIdx(0);
     };
     img.src = url;
   };
 
   const resetFace = (faceKey: FacelKey) => {
+    cancelAnimation();
     setGrids((prev) => ({ ...prev, [faceKey]: Array(prev[faceKey].length).fill('') }));
     setPreviews((p) => ({ ...p, [faceKey]: undefined }));
     setSolution(null);
+    setScrambledViaApp(false);
+    setStepIdx(0);
   };
 
   const resetAll = () => {
+    cancelAnimation();
     setGrids(makeSolvedGrids(config));
     setPreviews({});
     setSolution(null);
@@ -146,27 +181,29 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doScramble = () => {
     if (!config.scramble) return;
+    cancelAnimation();
     const s = config.scramble();
+    const tokens = tokenizeMoves(s);
     setScramble(s);
-    // Visually scramble the 3D state by shuffling stickers within each face.
-    setGrids((prev) => shuffleGrids(prev));
     setScrambledViaApp(true);
     setSolution(null);
     setStepIdx(0);
     toast({ title: 'Scrambled', description: s.length > 80 ? s.slice(0, 80) + '…' : s });
+    void playMoveSequence(tokens);
   };
 
   const doSolve = async () => {
     try {
+      if (animatingRef.current) {
+        toast({ title: 'Please wait', description: 'Let the current move animation finish first.' });
+        return;
+      }
       // If user scrambled via the app, the solution is simply the scramble inverted.
       if (scrambledViaApp && scramble) {
-        const tokens = scramble.split(/\s+/).filter(Boolean);
-        const inv = tokens.slice().reverse().map(invertMove).join(' ');
+        const tokens = tokenizeMoves(scramble);
+        const inv = tokens.slice().reverse().map(invertPuzzleMove).join(' ');
         setSolution(inv);
         setStepIdx(0);
-        // Restore solved 3D state — we can't animate per-move on these puzzles,
-        // but the move list is steppable via Prev/Next.
-        setGrids(makeSolvedGrids(config));
         return;
       }
       if (config.validate) {
