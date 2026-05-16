@@ -254,9 +254,23 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   };
 
   const moves = useMemo(
-    () => (solution ? solution.split(/\s+/).filter(Boolean) : []),
-    [solution]
+    () => (solution ? tokenizeMoves(solution).filter((m) => isExecutablePuzzleMove(grids, m)) : []),
+    [solution, grids]
   );
+
+  const goPrevStep = () => {
+    if (stepIdx <= 0 || animatingRef.current) return;
+    const prevMove = moves[stepIdx - 1];
+    setGrids((prev) => applyPuzzleMove(prev, invertPuzzleMove(prevMove)));
+    setStepIdx((i) => Math.max(0, i - 1));
+  };
+
+  const goNextStep = () => {
+    if (stepIdx >= moves.length || animatingRef.current) return;
+    const nextMove = moves[stepIdx];
+    setGrids((prev) => applyPuzzleMove(prev, nextMove));
+    setStepIdx((i) => Math.min(moves.length, i + 1));
+  };
 
   return (
     <div className="space-y-6">
@@ -388,12 +402,12 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
-                <Button variant="hero" onClick={doScramble}>
+                <Button variant="hero" onClick={doScramble} disabled={animating}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
               )}
-              <Button variant="hero" onClick={doSolve} disabled={solving}>
-                <Play className="h-4 w-4" /> {solving ? 'Solving...' : 'Solve'}
+              <Button variant="hero" onClick={doSolve} disabled={solving || animating}>
+                <Play className="h-4 w-4" /> {solving ? 'Solving...' : animating ? 'Moving...' : 'Solve'}
               </Button>
               <Button variant="ghost" onClick={resetAll}>Reset</Button>
               {scramble && (
@@ -423,10 +437,10 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button variant="secondary" onClick={() => setStepIdx((i) => Math.max(0, i - 1))} disabled={stepIdx <= 0}>
+                  <Button variant="secondary" onClick={goPrevStep} disabled={stepIdx <= 0 || animating}>
                     Prev
                   </Button>
-                  <Button onClick={() => setStepIdx((i) => Math.min(moves.length - 1, i + 1))} disabled={stepIdx >= moves.length - 1}>
+                  <Button onClick={goNextStep} disabled={stepIdx >= moves.length || animating}>
                     Next
                   </Button>
                   <span className="text-sm text-muted-foreground">
