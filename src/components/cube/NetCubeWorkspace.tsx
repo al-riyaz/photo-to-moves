@@ -333,6 +333,15 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
               <CardDescription>{config.description}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {session ? (
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  <LogOut className="h-4 w-4" /> Sign out
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={signIn} disabled={authLoading}>
+                  <LogIn className="h-4 w-4" /> Sign in
+                </Button>
+              )}
               {/* Upload dialog */}
               <Dialog>
                 <DialogTrigger asChild>
@@ -427,10 +436,16 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="mx-auto w-full max-w-xl">
-              {config.render3D ? config.render3D(grids, camera) : (
+              {config.render3D ? config.render3D(grids, camera, puzzle3dRef) : (
                 <p className="text-sm text-muted-foreground text-center py-12">3D view unavailable for this puzzle.</p>
               )}
             </div>
+            {!session && (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 text-primary" />
+                Sign in to run animated scramble and solve moves for {config.title}.
+              </div>
+            )}
             {!config.hidePerspectives && config.render3D && (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {PERSPECTIVES.map((p) => (
@@ -443,11 +458,11 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
-                <Button variant="hero" onClick={doScramble} disabled={animating}>
+                <Button variant="hero" onClick={doScramble} disabled={animating || authLoading}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
               )}
-              <Button variant="hero" onClick={doSolve} disabled={solving || animating}>
+              <Button variant="hero" onClick={doSolve} disabled={solving || animating || authLoading}>
                 <Play className="h-4 w-4" /> {solving ? 'Solving...' : animating ? 'Moving...' : 'Solve'}
               </Button>
               <Button variant="ghost" onClick={resetAll}>Reset</Button>
