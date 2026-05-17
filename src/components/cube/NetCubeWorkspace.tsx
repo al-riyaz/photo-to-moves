@@ -98,8 +98,38 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [stepIdx, setStepIdx] = useState(0);
   const [camera, setCamera] = useState<[number, number, number] | undefined>(undefined);
   const [animating, setAnimating] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const animationIdRef = useRef(0);
   const animatingRef = useRef(false);
+  const puzzle3dRef = useRef<Puzzle3DHandle | null>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthLoading(false);
+    });
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const requireLogin = () => {
+    if (session) return true;
+    toast({ title: 'Login required', description: `Sign in to animate ${config.title} scramble and solve moves.` });
+    return false;
+  };
+
+  const signIn = async () => {
+    const { error } = await lovable.auth.signInWithOAuth('google', { redirect_uri: window.location.origin });
+    if (error) toast({ title: 'Sign in failed', description: error.message });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const cancelAnimation = () => {
     animationIdRef.current += 1;
@@ -114,8 +144,12 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     setAnimating(true);
     for (const move of tokens) {
       if (animationIdRef.current !== id) return;
+      if (isExecutablePuzzleMove(grids, move)) {
+        await puzzle3dRef.current?.playMove(move);
+      }
+      if (animationIdRef.current !== id) return;
       setGrids((prev) => isExecutablePuzzleMove(prev, move) ? applyPuzzleMove(prev, move) : prev);
-      await new Promise((resolve) => setTimeout(resolve, 240));
+      await new Promise((resolve) => setTimeout(resolve, 80));
     }
     if (animationIdRef.current === id) {
       animatingRef.current = false;
