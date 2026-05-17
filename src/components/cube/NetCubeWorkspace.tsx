@@ -219,6 +219,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doScramble = () => {
     if (!config.scramble) return;
+    if (!requireLogin()) return;
     cancelAnimation();
     const s = config.scramble();
     const tokens = tokenizeMoves(s);
@@ -232,6 +233,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doSolve = async () => {
     try {
+      if (!requireLogin()) return;
       if (animatingRef.current) {
         toast({ title: 'Please wait', description: 'Let the current move animation finish first.' });
         return;
@@ -297,17 +299,18 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   );
 
   const goPrevStep = () => {
+    if (!requireLogin()) return;
     if (stepIdx <= 0 || animatingRef.current) return;
     const prevMove = moves[stepIdx - 1];
-    setGrids((prev) => applyPuzzleMove(prev, invertPuzzleMove(prevMove)));
-    setStepIdx((i) => Math.max(0, i - 1));
+    const inverse = invertPuzzleMove(prevMove);
+    void playMoveSequence([inverse]).then(() => setStepIdx((i) => Math.max(0, i - 1)));
   };
 
   const goNextStep = () => {
+    if (!requireLogin()) return;
     if (stepIdx >= moves.length || animatingRef.current) return;
     const nextMove = moves[stepIdx];
-    setGrids((prev) => applyPuzzleMove(prev, nextMove));
-    setStepIdx((i) => Math.min(moves.length, i + 1));
+    void playMoveSequence([nextMove]).then(() => setStepIdx((i) => Math.min(moves.length, i + 1)));
   };
 
   return (
