@@ -458,11 +458,11 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
-                <Button variant="hero" onClick={doScramble} disabled={animating || authLoading}>
+                <Button variant="hero" onClick={doScramble} disabled={!session || animating || authLoading}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
               )}
-              <Button variant="hero" onClick={doSolve} disabled={solving || animating || authLoading}>
+              <Button variant="hero" onClick={doSolve} disabled={!session || solving || animating || authLoading}>
                 <Play className="h-4 w-4" /> {solving ? 'Solving...' : animating ? 'Moving...' : 'Solve'}
               </Button>
               <Button variant="ghost" onClick={resetAll}>Reset</Button>
@@ -493,10 +493,10 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button variant="secondary" onClick={goPrevStep} disabled={stepIdx <= 0 || animating}>
+                  <Button variant="secondary" onClick={goPrevStep} disabled={!session || stepIdx <= 0 || animating}>
                     Prev
                   </Button>
-                  <Button onClick={goNextStep} disabled={stepIdx >= moves.length || animating}>
+                  <Button onClick={goNextStep} disabled={!session || stepIdx >= moves.length || animating}>
                     Next
                   </Button>
                   <span className="text-sm text-muted-foreground">
