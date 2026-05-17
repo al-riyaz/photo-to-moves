@@ -24,7 +24,7 @@ const config: NetCubeConfig = {
   validate: (g) => validateMegaminxGrids(g as any),
   solve: (g) => solveMegaminx(g as any),
   scramble: () => scrambleMegaminx(),
-  render3D: (g, cam) => <Puzzle3D kind={{ type: 'dodeca', faceOrder: MEGA_FACES }} grids={g} colorMap={SWATCH_COLOR} camera={cam} />,
+  render3D: (g, cam, handleRef) => <Puzzle3D kind={{ type: 'dodeca', faceOrder: MEGA_FACES }} grids={g} colorMap={SWATCH_COLOR} camera={cam} handleRef={handleRef} />,
   notation: (
     <div className="text-xs text-muted-foreground space-y-1">
       <p><span className="font-medium text-foreground">R++ / R--</span> — double-turn (72° × 2) of right adjacent layers; + clockwise, − counter-clockwise.</p>

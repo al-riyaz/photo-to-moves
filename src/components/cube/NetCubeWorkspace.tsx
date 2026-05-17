@@ -2,11 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box } from 'lucide-react';
+import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box, LogIn, LogOut, Lock } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
 import { applyPuzzleMove, invertPuzzleMove, isExecutablePuzzleMove, tokenizeMoves } from '@/lib/puzzle-moves';
+import type { Puzzle3DHandle } from '@/components/cube/Puzzle3D';
+import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 
 export type FacelKey = string;
 
@@ -31,7 +35,7 @@ export type NetCubeConfig = {
   notice?: React.ReactNode;
   scramble?: () => string;
   /** Optional 3D renderer. Receives a `camera` position to use for view perspectives. */
-  render3D?: (grids: Record<FacelKey, string[]>, camera?: [number, number, number]) => React.ReactNode;
+  render3D?: (grids: Record<FacelKey, string[]>, camera?: [number, number, number], handleRef?: React.MutableRefObject<Puzzle3DHandle | null>) => React.ReactNode;
   /** Set to true to hide perspective view buttons (e.g. for non-cube shapes). */
   hidePerspectives?: boolean;
 };
@@ -94,8 +98,38 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   const [stepIdx, setStepIdx] = useState(0);
   const [camera, setCamera] = useState<[number, number, number] | undefined>(undefined);
   const [animating, setAnimating] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const animationIdRef = useRef(0);
   const animatingRef = useRef(false);
+  const puzzle3dRef = useRef<Puzzle3DHandle | null>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthLoading(false);
+    });
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const requireLogin = () => {
+    if (session) return true;
+    toast({ title: 'Login required', description: `Sign in to animate ${config.title} scramble and solve moves.` });
+    return false;
+  };
+
+  const signIn = async () => {
+    const { error } = await lovable.auth.signInWithOAuth('google', { redirect_uri: window.location.origin });
+    if (error) toast({ title: 'Sign in failed', description: error.message });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const cancelAnimation = () => {
     animationIdRef.current += 1;
@@ -110,8 +144,12 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
     setAnimating(true);
     for (const move of tokens) {
       if (animationIdRef.current !== id) return;
+      if (isExecutablePuzzleMove(grids, move)) {
+        await puzzle3dRef.current?.playMove(move);
+      }
+      if (animationIdRef.current !== id) return;
       setGrids((prev) => isExecutablePuzzleMove(prev, move) ? applyPuzzleMove(prev, move) : prev);
-      await new Promise((resolve) => setTimeout(resolve, 240));
+      await new Promise((resolve) => setTimeout(resolve, 80));
     }
     if (animationIdRef.current === id) {
       animatingRef.current = false;
@@ -181,6 +219,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doScramble = () => {
     if (!config.scramble) return;
+    if (!requireLogin()) return;
     cancelAnimation();
     const s = config.scramble();
     const tokens = tokenizeMoves(s);
@@ -194,6 +233,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
 
   const doSolve = async () => {
     try {
+      if (!requireLogin()) return;
       if (animatingRef.current) {
         toast({ title: 'Please wait', description: 'Let the current move animation finish first.' });
         return;
@@ -259,17 +299,18 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
   );
 
   const goPrevStep = () => {
+    if (!requireLogin()) return;
     if (stepIdx <= 0 || animatingRef.current) return;
     const prevMove = moves[stepIdx - 1];
-    setGrids((prev) => applyPuzzleMove(prev, invertPuzzleMove(prevMove)));
-    setStepIdx((i) => Math.max(0, i - 1));
+    const inverse = invertPuzzleMove(prevMove);
+    void playMoveSequence([inverse]).then(() => setStepIdx((i) => Math.max(0, i - 1)));
   };
 
   const goNextStep = () => {
+    if (!requireLogin()) return;
     if (stepIdx >= moves.length || animatingRef.current) return;
     const nextMove = moves[stepIdx];
-    setGrids((prev) => applyPuzzleMove(prev, nextMove));
-    setStepIdx((i) => Math.min(moves.length, i + 1));
+    void playMoveSequence([nextMove]).then(() => setStepIdx((i) => Math.min(moves.length, i + 1)));
   };
 
   return (
@@ -292,6 +333,15 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
               <CardDescription>{config.description}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {session ? (
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  <LogOut className="h-4 w-4" /> Sign out
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={signIn} disabled={authLoading}>
+                  <LogIn className="h-4 w-4" /> Sign in
+                </Button>
+              )}
               {/* Upload dialog */}
               <Dialog>
                 <DialogTrigger asChild>
@@ -386,10 +436,16 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="mx-auto w-full max-w-xl">
-              {config.render3D ? config.render3D(grids, camera) : (
+              {config.render3D ? config.render3D(grids, camera, puzzle3dRef) : (
                 <p className="text-sm text-muted-foreground text-center py-12">3D view unavailable for this puzzle.</p>
               )}
             </div>
+            {!session && (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 text-primary" />
+                Sign in to run animated scramble and solve moves for {config.title}.
+              </div>
+            )}
             {!config.hidePerspectives && config.render3D && (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {PERSPECTIVES.map((p) => (
@@ -402,11 +458,11 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
             )}
             <div className="flex flex-wrap items-center gap-2">
               {config.scramble && (
-                <Button variant="hero" onClick={doScramble} disabled={animating}>
+                <Button variant="hero" onClick={doScramble} disabled={!session || animating || authLoading}>
                   <Shuffle className="h-4 w-4" /> Scramble
                 </Button>
               )}
-              <Button variant="hero" onClick={doSolve} disabled={solving || animating}>
+              <Button variant="hero" onClick={doSolve} disabled={!session || solving || animating || authLoading}>
                 <Play className="h-4 w-4" /> {solving ? 'Solving...' : animating ? 'Moving...' : 'Solve'}
               </Button>
               <Button variant="ghost" onClick={resetAll}>Reset</Button>
@@ -437,10 +493,10 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button variant="secondary" onClick={goPrevStep} disabled={stepIdx <= 0 || animating}>
+                  <Button variant="secondary" onClick={goPrevStep} disabled={!session || stepIdx <= 0 || animating}>
                     Prev
                   </Button>
-                  <Button onClick={goNextStep} disabled={stepIdx >= moves.length || animating}>
+                  <Button onClick={goNextStep} disabled={!session || stepIdx >= moves.length || animating}>
                     Next
                   </Button>
                   <span className="text-sm text-muted-foreground">
