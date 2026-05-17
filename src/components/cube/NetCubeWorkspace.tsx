@@ -2,11 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box } from 'lucide-react';
+import { Upload, Palette, Play, RotateCcw, Shuffle, CheckCircle2, Box, LogIn, LogOut, Lock } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { averageColor, classifyStickerColor, type RGB } from '@/lib/color-utils';
 import { applyPuzzleMove, invertPuzzleMove, isExecutablePuzzleMove, tokenizeMoves } from '@/lib/puzzle-moves';
+import type { Puzzle3DHandle } from '@/components/cube/Puzzle3D';
+import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 
 export type FacelKey = string;
 
@@ -31,7 +35,7 @@ export type NetCubeConfig = {
   notice?: React.ReactNode;
   scramble?: () => string;
   /** Optional 3D renderer. Receives a `camera` position to use for view perspectives. */
-  render3D?: (grids: Record<FacelKey, string[]>, camera?: [number, number, number]) => React.ReactNode;
+  render3D?: (grids: Record<FacelKey, string[]>, camera?: [number, number, number], handleRef?: React.MutableRefObject<Puzzle3DHandle | null>) => React.ReactNode;
   /** Set to true to hide perspective view buttons (e.g. for non-cube shapes). */
   hidePerspectives?: boolean;
 };
