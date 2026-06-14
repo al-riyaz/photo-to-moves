@@ -52,7 +52,11 @@ All colors MUST be HSL.
     --brand-2: 198 94% 60%;
     --brand-3: 291 73% 60%;
     --gradient-primary: linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-2)));
-    --gradient-subtle: radial-gradient(600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), hsl(var(--brand) / 0.15), transparent 40%);
+    --gradient-subtle: radial-gradient(
+      600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+      hsl(var(--brand) / 0.15),
+      transparent 40%
+    );
     --shadow-elegant: 0 12px 30px -10px hsl(var(--brand) / 0.35);
     --shadow-glow: 0 0 40px hsl(var(--brand-2) / 0.35);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -104,7 +108,11 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Brand tokens (dark) */
-    --gradient-subtle: radial-gradient(600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%), hsl(var(--brand) / 0.25), transparent 40%);
+    --gradient-subtle: radial-gradient(
+      600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+      hsl(var(--brand) / 0.25),
+      transparent 40%
+    );
   }
 }
 
@@ -133,10 +141,30 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  .cube-U { background-color: hsl(var(--cube-white)); }
-  .cube-R { background-color: hsl(var(--cube-red)); }
-  .cube-F { background-color: hsl(var(--cube-green)); }
-  .cube-D { background-color: hsl(var(--cube-yellow)); }
-  .cube-L { background-color: hsl(var(--cube-orange)); }
-  .cube-B { background-color: hsl(var(--cube-blue)); }
+  .cube-U {
+    background-color: hsl(var(--cube-white));
+  }
+  .cube-R {
+    background-color: hsl(var(--cube-red));
+  }
+  .cube-F {
+    background-color: hsl(var(--cube-green));
+  }
+  .cube-D {
+    background-color: hsl(var(--cube-yellow));
+  }
+  .cube-L {
+    background-color: hsl(var(--cube-orange));
+  }
+  .cube-B {
+    background-color: hsl(var(--cube-blue));
+  }
+}
+
+@lovable-badge {
+  display: none !important;
+}
+
+@lovable-badge-close {
+  display: none !important;
 }
