@@ -160,11 +160,3 @@ All colors MUST be HSL.
     background-color: hsl(var(--cube-blue));
   }
 }
-
-@lovable-badge {
-  //display: none !important;
-}
-
-@lovable-badge-close {
-  //display: none !important;
-}
