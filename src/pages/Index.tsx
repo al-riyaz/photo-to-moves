@@ -30,7 +30,7 @@ const Index: React.FC = () => {
       </Helmet>
       <main className="container max-w-6xl py-6 space-y-6">
         <header className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI — Rubik's Cube Solver</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Pick your puzzle, upload face photos or enter colors, and get a solution.
           </p>
