@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Guide from "./pages/Guide";
 import SeoStatus from "./pages/SeoStatus";
+import ThemeSettings from "./components/ThemeSettings";
 
 
 const queryClient = new QueryClient();
@@ -17,6 +18,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <div className="fixed right-4 top-4 z-50">
+          <ThemeSettings />
+        </div>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/guide" element={<Guide />} />
