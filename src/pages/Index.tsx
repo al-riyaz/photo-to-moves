@@ -25,8 +25,8 @@ const Index: React.FC = () => {
       <Helmet>
         <title>CubeSolver AI — Rubik's Cube Solver</title>
         <meta name="description" content="Upload six cube faces or enter colors to get the fastest Rubik's Cube solution instantly." />
-        <link rel="canonical" href="https://cubesolver.trend2print.com/" />
-        <meta property="og:url" content="https://cubesolver.trend2print.com/" />
+        <link rel="canonical" href="https://trend2print.com/" />
+        <meta property="og:url" content="https://trend2print.com/" />
       </Helmet>
       <main className="container max-w-6xl py-6 space-y-6">
         <header className="text-center space-y-3">
