@@ -280,6 +280,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
               key={i}
               type="button"
               onClick={() => cycle(face.key, i)}
+              aria-label={`${face.label ?? face.key} sticker ${i + 1}, ${c ? `color ${c}` : 'unset'}`}
               className={cn(
                 'aspect-square rounded-sm border focus:outline-none focus:ring-2 focus:ring-ring',
                 cls || (c ? '' : 'bg-muted')
