@@ -375,7 +375,7 @@ export const NetCubeWorkspace: React.FC<{ config: NetCubeConfig }> = ({ config }
                                 className="hidden"
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(face, f); }}
                               />
-                              <Button asChild size="sm" variant="outline"><span><Upload className="h-3.5 w-3.5" /></span></Button>
+                              <Button asChild size="sm" variant="outline"><span aria-label={`Upload ${face.title} photo`}><Upload className="h-3.5 w-3.5" /></span></Button>
                             </label>
                             <Button size="sm" variant="ghost" onClick={() => resetFace(face.key)} aria-label="Reset face">
                               <RotateCcw className="h-3.5 w-3.5" />

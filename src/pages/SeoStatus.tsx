@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -76,6 +76,9 @@ const SeoStatus: React.FC = () => {
         <meta name="description" content="Automated checklist confirming Google Search Console verification for CubeSolver AI." />
         <meta name="robots" content="noindex" />
         <link rel="canonical" href={`${SITE}/seo-status`} />
+        <meta property="og:title" content="Search Console Status — CubeSolver AI" />
+        <meta property="og:description" content="Automated checklist confirming Google Search Console verification for CubeSolver AI." />
+        <meta property="og:url" content={`${SITE}/seo-status`} />
       </Helmet>
 
       <div className="mx-auto max-w-3xl px-4 py-10">
@@ -91,7 +94,7 @@ const SeoStatus: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
-              <CardTitle className="text-2xl">Search Console verification</CardTitle>
+              <h2 className="text-2xl font-semibold leading-none tracking-tight">Search Console verification</h2>
               <Button onClick={run} disabled={loading} size="sm" variant="outline">
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -154,7 +157,7 @@ const SeoStatus: React.FC = () => {
 
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-lg">What to do next</CardTitle>
+            <h2 className="text-lg font-semibold leading-none tracking-tight">What to do next</h2>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>1. Publish the app so the verification meta tag goes live.</p>
