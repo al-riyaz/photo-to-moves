@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://cubesolver.trend2print.com/sitemap.xml
+Sitemap: https://trend2print.com/sitemap.xml

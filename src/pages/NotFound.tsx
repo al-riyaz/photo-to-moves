@@ -18,10 +18,10 @@ const NotFound = () => {
         <title>Page Not Found — CubeSolver AI</title>
         <meta name="description" content="This page doesn't exist. Head back to CubeSolver AI to scan and solve your Rubik's Cube." />
         <meta name="robots" content="noindex, follow" />
-        <link rel="canonical" href="https://cubesolver.trend2print.com/" />
+        <link rel="canonical" href="https://trend2print.com/" />
         <meta property="og:title" content="Page Not Found — CubeSolver AI" />
         <meta property="og:description" content="This page doesn't exist. Head back to CubeSolver AI to scan and solve your Rubik's Cube." />
-        <meta property="og:url" content="https://cubesolver.trend2print.com/404" />
+        <meta property="og:url" content="https://trend2print.com/404" />
       </Helmet>
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">404</h1>

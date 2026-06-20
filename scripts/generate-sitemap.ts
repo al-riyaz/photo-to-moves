@@ -3,7 +3,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://cubesolver.trend2print.com";
+const BASE_URL = "https://trend2print.com";
 
 interface SitemapEntry {
   path: string;

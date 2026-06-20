@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Boxes } from 'lucide-react';
 
-const SITE = 'https://cubesolver.trend2print.com';
+const SITE = 'https://trend2print.com';
 
 const Move: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <code className="font-mono text-foreground bg-muted rounded px-1.5 py-0.5">{children}</code>
