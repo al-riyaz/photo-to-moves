@@ -43,6 +43,7 @@ export const CubeColorGrid: React.FC<Props> = ({ face, title, cells, onChange, o
             key={i}
             type="button"
             onClick={() => cycle(i)}
+            aria-label={`${title} sticker row ${Math.floor(i / 3) + 1} column ${(i % 3) + 1}, ${c ? `color ${c}` : 'unset'}`}
             className={cn(
               'aspect-square rounded-sm border transition-opacity focus:outline-none focus:ring-2 focus:ring-ring',
               c ? `cube-${c}` : 'bg-muted'

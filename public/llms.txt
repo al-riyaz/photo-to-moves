@@ -1,0 +1,14 @@
+# CubeSolver AI
+
+> Solve any Rubik's Cube fast: upload six face photos or enter the colors and get an optimal step-by-step solution.
+
+CubeSolver AI scans a scrambled 3x3 Rubik's Cube from images or manual color input and returns the fastest solving sequence using the Kociemba two-phase algorithm, with a 3D cube you can step through move by move.
+
+## Pages
+
+- [Home](/): Scan or enter your cube colors and get an instant, step-by-step solution.
+
+## Optional
+
+- [Robots](/robots.txt): Crawler rules.
+- [Sitemap](/sitemap.xml): List of indexable pages.

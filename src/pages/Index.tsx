@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import CubeTypeMenu, { type CubeType } from '@/components/cube/CubeTypeMenu';
 import ThreeByThreeWorkspace from '@/components/cube/workspaces/ThreeByThreeWorkspace';
 import TwoByTwoWorkspace from '@/components/cube/workspaces/TwoByTwoWorkspace';
@@ -20,6 +21,12 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
+      <Helmet>
+        <title>CubeSolver AI — Rubik's Cube Solver</title>
+        <meta name="description" content="Upload six cube faces or enter colors to get the fastest Rubik's Cube solution instantly." />
+        <link rel="canonical" href="https://cubesolver.trend2print.com/" />
+        <meta property="og:url" content="https://cubesolver.trend2print.com/" />
+      </Helmet>
       <main className="container max-w-6xl py-6 space-y-6">
         <header className="text-center space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
@@ -27,6 +34,7 @@ const Index: React.FC = () => {
             Pick your puzzle, upload face photos or enter colors, and get a solution.
           </p>
         </header>
+        <h2 className="sr-only">Rubik's Cube solver workspace</h2>
         <CubeTypeMenu value={cubeType} onChange={setCubeType} />
         {cubeType === '3x3' && <ThreeByThreeWorkspace />}
         {cubeType === '2x2' && <TwoByTwoWorkspace />}
