@@ -32,7 +32,7 @@ const Guide: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero">
       <Helmet>
-        <title>How to Solve a Rubik's Cube — Beginner's Guide | CubeSolver AI</title>
+        <title>How to Solve a Rubik's Cube Guide | CubeSolver AI</title>
         <meta
           name="description"
           content="Learn how to solve a 3x3 Rubik's Cube step by step with the beginner Layer-by-Layer method. Clear notation, simple algorithms, and tips to never get stuck."

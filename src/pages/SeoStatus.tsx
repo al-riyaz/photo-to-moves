@@ -86,6 +86,8 @@ const SeoStatus: React.FC = () => {
           <ArrowLeft className="h-4 w-4" /> Back to solver
         </Link>
 
+        <h1 className="mb-6 text-3xl font-bold tracking-tight">Search Console Status</h1>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
