@@ -27,6 +27,7 @@ const Index: React.FC = () => {
             Pick your puzzle, upload face photos or enter colors, and get a solution.
           </p>
         </header>
+        <h2 className="sr-only">Rubik's Cube solver workspace</h2>
         <CubeTypeMenu value={cubeType} onChange={setCubeType} />
         {cubeType === '3x3' && <ThreeByThreeWorkspace />}
         {cubeType === '2x2' && <TwoByTwoWorkspace />}
