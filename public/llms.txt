@@ -7,6 +7,7 @@ CubeSolver AI scans a scrambled 3x3 Rubik's Cube from images or manual color inp
 ## Pages
 
 - [Home](/): Scan or enter your cube colors and get an instant, step-by-step solution.
+- [How to Solve a Rubik's Cube](/guide): Beginner-friendly Layer-by-Layer tutorial with notation and algorithms.
 
 ## Optional
 
