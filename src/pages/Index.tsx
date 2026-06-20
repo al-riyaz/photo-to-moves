@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import CubeTypeMenu, { type CubeType } from '@/components/cube/CubeTypeMenu';
 import ThreeByThreeWorkspace from '@/components/cube/workspaces/ThreeByThreeWorkspace';
 import TwoByTwoWorkspace from '@/components/cube/workspaces/TwoByTwoWorkspace';
@@ -32,6 +33,12 @@ const Index: React.FC = () => {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">CubeSolver AI</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Pick your puzzle, upload face photos or enter colors, and get a solution.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            New to cubing?{' '}
+            <Link to="/guide" className="text-primary underline underline-offset-4">
+              Read our How to Solve a Rubik's Cube guide
+            </Link>
           </p>
         </header>
         <h2 className="sr-only">Rubik's Cube solver workspace</h2>
