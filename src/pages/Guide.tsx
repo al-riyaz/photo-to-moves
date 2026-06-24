@@ -53,6 +53,8 @@ const Guide: React.FC = () => {
           <Link to="/" className="hover:text-foreground inline-flex items-center gap-1">
             <ArrowLeft className="h-3.5 w-3.5" /> Back to solver
           </Link>
+          {' '}
+          <Link to="/guide/2x2" className="hover:text-foreground ml-3">2x2 guide</Link>
         </nav>
 
         <header className="space-y-3">
