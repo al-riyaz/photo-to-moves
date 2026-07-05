@@ -23,7 +23,7 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero" onMouseMove={onMouseMove}>
       <Helmet>
-        <title>Rubik&#39;s Cube Solver Online | AI Cube Scanner &amp; Solution Generator</title>
+        <title>AI Cube Scanner &amp; Solution Generator</title>
         <meta
           name="description"
           content="Upload six cube faces or enter colors to get the fastest Rubik's Cube solution instantly."
