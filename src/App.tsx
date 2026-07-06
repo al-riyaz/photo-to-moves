@@ -7,6 +7,13 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Guide from "./pages/Guide";
 import Guide2x2 from "./pages/Guide2x2";
+import Guide4x4 from "./pages/Guide4x4";
+import GuidePyraminx from "./pages/GuidePyraminx";
+import Notation from "./pages/Notation";
+import About from "./pages/About";
+import Faq from "./pages/Faq";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import SeoStatus from "./pages/SeoStatus";
 import ThemeSettings from "./components/ThemeSettings";
 
@@ -26,6 +33,13 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/guide" element={<Guide />} />
           <Route path="/guide/2x2" element={<Guide2x2 />} />
+          <Route path="/guide/4x4" element={<Guide4x4 />} />
+          <Route path="/guide/pyraminx" element={<GuidePyraminx />} />
+          <Route path="/notation" element={<Notation />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/seo-status" element={<SeoStatus />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
