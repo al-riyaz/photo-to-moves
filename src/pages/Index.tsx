@@ -8,6 +8,7 @@ import FourByFourWorkspace from "@/components/cube/workspaces/FourByFourWorkspac
 import PyraminxWorkspace from "@/components/cube/workspaces/PyraminxWorkspace";
 import MegaminxWorkspace from "@/components/cube/workspaces/MegaminxWorkspace";
 import MirrorWorkspace from "@/components/cube/workspaces/MirrorWorkspace";
+import SiteFooter from "@/components/SiteFooter";
 
 const Index: React.FC = () => {
   const [cubeType, setCubeType] = useState<CubeType>("3x3");
@@ -53,6 +54,7 @@ const Index: React.FC = () => {
         {cubeType === "megaminx" && <MegaminxWorkspace />}
         {cubeType === "mirror" && <MirrorWorkspace />}
       </main>
+      <SiteFooter />
     </div>
   );
 };

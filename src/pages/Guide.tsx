@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Boxes } from 'lucide-react';
+import SiteFooter from '@/components/SiteFooter';
 
 const SITE = 'https://trend2print.com';
 
@@ -55,6 +56,12 @@ const Guide: React.FC = () => {
           </Link>
           {' '}
           <Link to="/guide/2x2" className="hover:text-foreground ml-3">2x2 guide</Link>
+          {' '}
+          <Link to="/guide/4x4" className="hover:text-foreground ml-3">4x4 guide</Link>
+          {' '}
+          <Link to="/guide/pyraminx" className="hover:text-foreground ml-3">Pyraminx guide</Link>
+          {' '}
+          <Link to="/notation" className="hover:text-foreground ml-3">Notation</Link>
         </nav>
 
         <header className="space-y-3">
@@ -218,6 +225,7 @@ const Guide: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      <SiteFooter />
     </div>
   );
 };

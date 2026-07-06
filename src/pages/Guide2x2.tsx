@@ -8,6 +8,7 @@ import heroImg from '@/assets/guide-2x2-hero.jpg';
 import step1Img from '@/assets/guide-2x2-step1.jpg';
 import step2Img from '@/assets/guide-2x2-step2.jpg';
 import step3Img from '@/assets/guide-2x2-step3.jpg';
+import SiteFooter from '@/components/SiteFooter';
 
 const SITE = 'https://trend2print.com';
 
@@ -55,6 +56,9 @@ const Guide2x2: React.FC = () => {
             <ArrowLeft className="h-3.5 w-3.5" /> Back to solver
           </Link>
           <Link to="/guide" className="hover:text-foreground">3x3 guide</Link>
+          <Link to="/guide/4x4" className="hover:text-foreground">4x4 guide</Link>
+          <Link to="/guide/pyraminx" className="hover:text-foreground">Pyraminx guide</Link>
+          <Link to="/notation" className="hover:text-foreground">Notation</Link>
         </nav>
 
         <header className="space-y-4">
@@ -191,6 +195,7 @@ const Guide2x2: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      <SiteFooter />
     </div>
   );
 };
