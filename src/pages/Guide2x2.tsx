@@ -8,6 +8,7 @@ import heroImg from '@/assets/guide-2x2-hero.jpg';
 import step1Img from '@/assets/guide-2x2-step1.jpg';
 import step2Img from '@/assets/guide-2x2-step2.jpg';
 import step3Img from '@/assets/guide-2x2-step3.jpg';
+import SiteFooter from '@/components/SiteFooter';
 
 const SITE = 'https://trend2print.com';
 
@@ -191,6 +192,7 @@ const Guide2x2: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      <SiteFooter />
     </div>
   );
 };

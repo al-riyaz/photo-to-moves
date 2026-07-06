@@ -225,6 +225,7 @@ const Guide: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      <SiteFooter />
     </div>
   );
 };
