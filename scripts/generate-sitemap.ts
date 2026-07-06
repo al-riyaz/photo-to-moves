@@ -15,6 +15,15 @@ const entries: SitemapEntry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/guide", changefreq: "monthly", priority: "0.8" },
   { path: "/guide/2x2", changefreq: "monthly", priority: "0.7" },
+  { path: "/guide/4x4", changefreq: "monthly", priority: "0.7" },
+  { path: "/guide/pyraminx", changefreq: "monthly", priority: "0.7" },
+  { path: "/notation", changefreq: "monthly", priority: "0.7" },
+  { path: "/about", changefreq: "monthly", priority: "0.5" },
+  { path: "/faq", changefreq: "monthly", priority: "0.6" },
+  { path: "/blog", changefreq: "weekly", priority: "0.6" },
+  { path: "/blog/speedcubing-tips-for-beginners", changefreq: "monthly", priority: "0.6" },
+  { path: "/blog/how-a-cube-solver-works", changefreq: "monthly", priority: "0.6" },
+  { path: "/blog/best-cubes-for-beginners", changefreq: "monthly", priority: "0.6" },
   { path: "/seo-status", changefreq: "monthly", priority: "0.3" },
 ];
 
