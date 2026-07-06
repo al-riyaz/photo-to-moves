@@ -8,6 +8,13 @@ CubeSolver AI scans a scrambled 3x3 Rubik's Cube from images or manual color inp
 
 - [Home](/): Scan or enter your cube colors and get an instant, step-by-step solution.
 - [How to Solve a Rubik's Cube](/guide): Beginner-friendly Layer-by-Layer tutorial with notation and algorithms.
+- [How to Solve a 2x2](/guide/2x2): Fastest way to learn your first cube in three easy steps.
+- [How to Solve a 4x4](/guide/4x4): The reduction method plus both parity fixes.
+- [How to Solve a Pyraminx](/guide/pyraminx): Beginner pyramid-puzzle tutorial.
+- [Notation & Algorithms](/notation): Complete reference for cube notation and beginner algorithms.
+- [FAQ](/faq): Common questions about the solver and learning to solve.
+- [About](/about): What CubeSolver AI does and the technology behind it.
+- [Blog](/blog): Speedcubing tips, buying guides, and how solvers work.
 
 ## Optional
 
