@@ -34,7 +34,7 @@ const Guide4x4: React.FC = () => {
         <title>How to Solve a 4x4 Rubik's Cube Guide | CubeSolver AI</title>
         <meta
           name="description"
-          content="Learn how to solve a 4x4 Rubik's Revenge with the reduction method: build centers, pair edges, solve like a 3x3, and fix both parity cases with clear algorithms."
+          content="Solve a 4x4 Rubik's Revenge with the reduction method: build centers, pair edges, solve like a 3x3, and fix both parity cases with clear algorithms."
         />
         <link rel="canonical" href={`${SITE}/guide/4x4`} />
         <meta property="og:title" content="How to Solve a 4x4 Rubik's Cube — Reduction Method" />
