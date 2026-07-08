@@ -107,10 +107,10 @@ const Faq: React.FC = () => {
   return (
     <div className="min-h-screen bg-hero">
       <Helmet>
-        <title>Rubik's Cube Solver FAQ — Common Questions Answered | CubeSolver AI</title>
+        <title>Rubik's Cube Solver FAQ | CubeSolver AI</title>
         <meta
           name="description"
-          content="Answers to common questions about solving a Rubik's Cube online: how the solver works, which puzzles are supported, God's Number, invalid cubes, and learning to solve."
+          content="Common questions about the online Rubik's Cube solver: how it works, supported puzzles, God's Number, invalid cubes, and learning to solve."
         />
         <link rel="canonical" href={`${SITE}/faq`} />
         <meta property="og:title" content="Rubik's Cube Solver FAQ" />
