@@ -62,6 +62,7 @@ const Guide: React.FC = () => {
           <Link to="/guide/pyraminx" className="hover:text-foreground ml-3">Pyraminx guide</Link>
           {' '}
           <Link to="/notation" className="hover:text-foreground ml-3">Notation</Link>
+          <Link to="/patterns" className="hover:text-foreground ml-3">Patterns</Link>
         </nav>
 
         <header className="space-y-3">
