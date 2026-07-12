@@ -10,6 +10,7 @@ import Guide2x2 from "./pages/Guide2x2";
 import Guide4x4 from "./pages/Guide4x4";
 import GuidePyraminx from "./pages/GuidePyraminx";
 import Notation from "./pages/Notation";
+import Patterns from "./pages/Patterns";
 import About from "./pages/About";
 import Faq from "./pages/Faq";
 import Blog from "./pages/Blog";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/guide/4x4" element={<Guide4x4 />} />
           <Route path="/guide/pyraminx" element={<GuidePyraminx />} />
           <Route path="/notation" element={<Notation />} />
+          <Route path="/patterns" element={<Patterns />} />
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/blog" element={<Blog />} />
