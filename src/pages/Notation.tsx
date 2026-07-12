@@ -19,7 +19,7 @@ const Notation: React.FC = () => {
         <title>Rubik's Cube Notation &amp; Algorithm Reference | CubeSolver AI</title>
         <meta
           name="description"
-          content="A complete reference for Rubik's Cube notation: face turns, prime and double moves, wide and slice turns, cube rotations, and the most useful beginner algorithms."
+          content="A complete reference for Rubik's Cube notation: face turns, prime and double moves, wide and slice turns, rotations, and key beginner algorithms."
         />
         <link rel="canonical" href={`${SITE}/notation`} />
         <meta property="og:title" content="Rubik's Cube Notation & Algorithm Reference" />
