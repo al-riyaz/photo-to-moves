@@ -18,6 +18,7 @@ const entries: SitemapEntry[] = [
   { path: "/guide/4x4", changefreq: "monthly", priority: "0.7" },
   { path: "/guide/pyraminx", changefreq: "monthly", priority: "0.7" },
   { path: "/notation", changefreq: "monthly", priority: "0.7" },
+  { path: "/patterns", changefreq: "monthly", priority: "0.7" },
   { path: "/about", changefreq: "monthly", priority: "0.5" },
   { path: "/faq", changefreq: "monthly", priority: "0.6" },
   { path: "/blog", changefreq: "weekly", priority: "0.6" },
