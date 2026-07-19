@@ -46,6 +46,7 @@ const SiteFooter: React.FC = () => {
             <li><Link to="/" className={linkClass}>Cube solver</Link></li>
             <li><Link to="/about" className={linkClass}>About</Link></li>
             <li><Link to="/faq" className={linkClass}>FAQ</Link></li>
+            <li><Link to="/privacy" className={linkClass}>Privacy Policy</Link></li>
           </ul>
         </nav>
       </div>

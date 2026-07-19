@@ -21,6 +21,7 @@ const entries: SitemapEntry[] = [
   { path: "/patterns", changefreq: "monthly", priority: "0.7" },
   { path: "/about", changefreq: "monthly", priority: "0.5" },
   { path: "/faq", changefreq: "monthly", priority: "0.6" },
+  { path: "/privacy", changefreq: "yearly", priority: "0.3" },
   { path: "/blog", changefreq: "weekly", priority: "0.6" },
   { path: "/blog/speedcubing-tips-for-beginners", changefreq: "monthly", priority: "0.6" },
   { path: "/blog/how-a-cube-solver-works", changefreq: "monthly", priority: "0.6" },

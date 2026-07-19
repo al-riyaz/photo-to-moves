@@ -13,6 +13,7 @@ import Notation from "./pages/Notation";
 import Patterns from "./pages/Patterns";
 import About from "./pages/About";
 import Faq from "./pages/Faq";
+import Privacy from "./pages/Privacy";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import SeoStatus from "./pages/SeoStatus";
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/patterns" element={<Patterns />} />
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<Faq />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/seo-status" element={<SeoStatus />} />

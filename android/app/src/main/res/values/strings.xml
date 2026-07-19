@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CubeSolver AI</string>
+    <string name="camera_permission_rationale">CubeSolver AI needs camera access to scan your cube\'s faces. Photos never leave your device.</string>
+    <string name="grant_camera_permission">Allow Camera Access</string>
+    <string name="capture_photo">Capture photo</string>
+    <string name="retake">Retake</string>
+    <string name="review_colors">Review Colors</string>
+    <string name="next_face">Next Face</string>
+</resources>

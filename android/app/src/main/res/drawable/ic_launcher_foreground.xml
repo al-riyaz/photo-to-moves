@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Isometric cube glyph: top / left / right faces, each subdivided into a 3x3 sticker grid -->
+    <!-- Top face -->
+    <path
+        android:fillColor="#F5D8DA"
+        android:pathData="M54,20 L80,35 L54,50 L28,35 Z" />
+    <!-- Left face -->
+    <path
+        android:fillColor="#A8253A"
+        android:pathData="M28,35 L54,50 L54,80 L28,65 Z" />
+    <!-- Right face -->
+    <path
+        android:fillColor="#5C0E1C"
+        android:pathData="M80,35 L54,50 L54,80 L80,65 Z" />
+    <!-- Sticker grid lines: top face -->
+    <path
+        android:strokeColor="#1B1F27"
+        android:strokeWidth="1.4"
+        android:pathData="M45.3,25 L71.3,40 M36.7,30 L62.7,45 M62.7,25 L36.7,40 M71.3,30 L45.3,45 M54,20 L54,50 M41,27.5 L41,57.5 M67,42.5 L67,42.5" />
+    <!-- Sticker grid lines: left face -->
+    <path
+        android:strokeColor="#1B1F27"
+        android:strokeWidth="1.4"
+        android:pathData="M28,45 L54,60 M28,55 L54,70 M36.7,40 L36.7,70 M45.3,45 L45.3,75" />
+    <!-- Sticker grid lines: right face -->
+    <path
+        android:strokeColor="#1B1F27"
+        android:strokeWidth="1.4"
+        android:pathData="M80,45 L54,60 M80,55 L54,70 M71.3,40 L71.3,70 M62.7,45 L62.7,75" />
+    <!-- Outer cube outline -->
+    <path
+        android:strokeColor="#1B1F27"
+        android:strokeWidth="2"
+        android:pathData="M54,20 L80,35 L80,65 L54,80 L28,65 L28,35 Z" />
+</vector>
